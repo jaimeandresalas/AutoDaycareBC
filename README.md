@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
+  <img src="https://img.shields.io/badge/Next.js-14-black?logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Supabase-DB-3ECF8E?logo=supabase" alt="Supabase" />
+  <img src="https://img.shields.io/badge/Clerk-Auth-6C47FF" alt="Clerk" />
+  <img src="https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwind-css" alt="Tailwind CSS" />
+</div>
 
-## Getting Started
+<br />
 
-First, run the development server:
+<div align="center">
+  <h1 align="center">🧸 AutoDayCare BC</h1>
+  <p align="center">
+    <strong>An AI-powered SaaS that digitizes BC's child care search by aggregating government data and automating personalized outreach to offline daycares.</strong>
+  </p>
+  <p align="center">
+    <a href="https://auto-daycare-bc.vercel.app/">View Live Demo</a>
+    ·
+    <a href="explainer_AutoDayCareBC.md">Read the Explainer</a>
+    ·
+    <a href="routes_AutoDayCareBC.md">View Route Architecture</a>
+  </p>
+</div>
 
+---
+
+## 🎯 What is it?
+Finding child care in British Columbia is a deeply frustrating process because the vast majority of providers are not digitized and only offer a phone number. 
+
+**AutoDayCare BC solves this by:**
+1. Mapping official BC government data using React-Leaflet.
+2. Providing an "Auto-Outreach Engine" (powered by Zustand) that allows parents to contact dozens of daycares simultaneously.
+3. Supplying an Analytics dashboard (powered by Recharts) to track automated campaigns vs. verified 1-click requests.
+4. Offering a Provider Lead-Gen portal so facilities can claim their business and digitize their waitlist.
+
+---
+
+## 🚀 Quickstart Guide (For Judges)
+
+### 1. Clone & Install
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/jaimeandresalas/AutoDaycareBC.git
+cd AutoDaycareBC
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Variables
+Create a `.env.local` file in the root directory and add your keys for Clerk (Auth) and Supabase (Postgres Database):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL=/onboarding
+NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL=/dashboard
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Supabase backend
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## Learn More
+### 3. Database Setup (Supabase Seed)
+To populate the database with the mock BC government providers and ensure the Row Level Security (RLS) constraints are correct, you need to run the provided SQL seed script:
 
-To learn more about Next.js, take a look at the following resources:
+1. Go to your [Supabase Dashboard](https://supabase.com/dashboard/).
+2. Navigate to the **SQL Editor** on the left menu.
+3. Open the file `supabase/seed.sql` located in this repository.
+4. Copy its entire content, paste it into the Supabase SQL Editor, and click **Run**.
+*(Note: This creates all necessary tables: `parents`, `providers`, `campaigns`, and `outreach_logs`, and seeds 20 mock providers).*
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Run the Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) with your browser to explore the platform!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🛠️ Tech Stack
+- **Framework:** [Next.js 14](https://nextjs.org/) (App Router, Server Actions)
+- **Database:** [Supabase](https://supabase.com/) (PostgreSQL)
+- **Authentication:** [Clerk](https://clerk.com/) (Middleware-protected routes)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [Shadcn/ui](https://ui.shadcn.com/)
+- **Animations:** [Framer Motion](https://www.framer.com/motion/)
+- **State Management:** [Zustand](https://github.com/pmndrs/zustand)
+- **Mapping:** [React-Leaflet](https://react-leaflet.js.org/)
+- **Data Visualization:** [Recharts](https://recharts.org/)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📁 Key Directories
+
+- `src/app/` - Next.js App Router pages (Landing, Dashboard, Outreach, Analytics, Providers).
+- `src/app/actions/` - Secure Server Actions for interacting with Supabase.
+- `src/components/` - Reusable UI components (shadcn, charts, maps).
+- `src/lib/` - Utilities and types.
+- `src/store/` - Zustand global state stores.
+- `supabase/` - SQL migration and mock seed scripts.
+
+---
+
+> Built with ❤️ for parents in British Columbia.
