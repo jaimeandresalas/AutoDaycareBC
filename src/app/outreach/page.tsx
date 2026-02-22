@@ -1,246 +1,364 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, MapPin, Send, FileText, Smartphone, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle, MapPin, Send, Smartphone, Loader2, Trash2, ArrowLeft, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useOutreachStore } from "@/store/useOutreachStore";
 
+const messageTemplate = `Hi! I'm a local parent looking for care for my 2-year-old starting around August 2026. Do you have any upcoming spots or an open waitlist? Please reply Y/N.
+
+--
+Sent via CareConnect BC.
+Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: careconnect.bc.ca/providers`;
 
 export default function OutreachPage() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [phase, setPhase] = useState<"idle" | "scraping" | "generating" | "sending" | "completed">("idle");
-    const [targetCount] = useState(15);
-    const [targetCity] = useState("Coquitlam");
+    const { selectedDaycares, toggleDaycare, clearSelection } = useOutreachStore();
+    const count = selectedDaycares.length;
 
-    const messageTemplate = "Hi, I am looking for care for my 2-year-old starting August 2026. Do you have space? Please reply Y/N.";
+    // Sending simulation state
+    const [isSending, setIsSending] = useState(false);
+    const [sendProgress, setSendProgress] = useState(0);
 
-    // Handle the simulation logic
+    // 4 seconds = 4000ms, 100 steps → 40ms per step
     useEffect(() => {
         let interval: NodeJS.Timeout;
 
-        if (isModalOpen && phase !== "completed" && phase !== "idle") {
-            // We want to fill the progress bar to 100% over approximately 3 seconds (3000ms).
-            // We update it every 30ms by 1%. 30ms * 100 = 3000ms.
+        if (isSending && sendProgress < 100) {
             interval = setInterval(() => {
-                setProgress((prev) => {
-                    if (prev >= 100) {
+                setSendProgress((prev) => {
+                    const next = prev + 1;
+                    if (next >= 100) {
                         clearInterval(interval);
                         return 100;
                     }
-                    const next = prev + 1;
-
-                    // Change phases based on progress thresholds
-                    if (next === 1) setPhase("scraping");
-                    else if (next === 33) setPhase("generating");
-                    else if (next === 66) setPhase("sending");
-                    else if (next === 100) setPhase("completed");
-
                     return next;
                 });
-            }, 30);
+            }, 40);
         }
 
         return () => clearInterval(interval);
-    }, [isModalOpen, phase]);
+    }, [isSending, sendProgress]);
 
     const handleLaunch = () => {
-        setProgress(0);
-        setPhase("scraping");
-        setIsModalOpen(true);
+        setSendProgress(0);
+        setIsSending(true);
     };
 
-    const closeModal = () => {
-        if (phase === "completed") {
-            setIsModalOpen(false);
-            setTimeout(() => {
-                setPhase("idle");
-                setProgress(0);
-            }, 300);
-        }
+    const handleReturnToDashboard = () => {
+        clearSelection();
     };
 
-    const getPhaseMessage = () => {
-        switch (phase) {
-            case "scraping": return "Scraping phone numbers...";
-            case "generating": return "Generating SMS...";
-            case "sending": return "Sending...";
-            case "completed": return "Campaign Complete!";
-            default: return "";
-        }
+    const getStatusText = () => {
+        if (sendProgress < 30) return "Establishing secure connection...";
+        if (sendProgress < 60) return "Formatting SMS and Emails...";
+        if (sendProgress < 100) return `Dispatching messages to ${count} providers...`;
+        return "Campaign Launched!";
     };
 
+    // ─── EMPTY STATE ────────────────────────────────────────
+    if (count === 0 && !isSending) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col font-sans">
+                <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur shadow-sm">
+                    <div className="container mx-auto px-6 h-16 flex items-center gap-3">
+                        <Link href="/" className="flex items-center gap-3">
+                            <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shadow-sm">
+                                <Send className="h-5 w-5" />
+                            </div>
+                            <span className="text-xl font-bold tracking-tight text-primary">AutoDayCare BC</span>
+                        </Link>
+                    </div>
+                </header>
+                <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="max-w-sm space-y-6"
+                    >
+                        <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mx-auto">
+                            <Search className="h-10 w-10 text-muted-foreground/50" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-foreground">No daycares selected for outreach.</h2>
+                        <p className="text-muted-foreground font-medium">
+                            Head to the dashboard and add daycares to your campaign first.
+                        </p>
+                        <Button size="lg" className="rounded-full font-semibold px-8" asChild>
+                            <Link href="/dashboard">
+                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                Back to Search
+                            </Link>
+                        </Button>
+                    </motion.div>
+                </div>
+            </div>
+        );
+    }
+
+    // ─── MAIN REVIEW LAYOUT ─────────────────────────────────
     return (
         <div className="min-h-screen bg-background flex flex-col font-sans">
-            {/* Simple Header */}
+            {/* Header */}
             <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur shadow-sm">
-                <div className="container mx-auto px-6 h-16 flex items-center gap-3">
+                <div className="container mx-auto px-6 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-3">
                         <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shadow-sm">
                             <Send className="h-5 w-5" />
                         </div>
-                        <span className="text-xl font-bold tracking-tight text-primary">Outreach Engine</span>
+                        <span className="text-xl font-bold tracking-tight text-primary">AutoDayCare BC</span>
                     </Link>
+                    {!isSending && (
+                        <Button variant="ghost" size="sm" className="text-muted-foreground font-medium" asChild>
+                            <Link href="/dashboard">
+                                <ArrowLeft className="h-4 w-4 mr-1.5" />
+                                Back to Dashboard
+                            </Link>
+                        </Button>
+                    )}
                 </div>
             </header>
 
-            <main className="flex-1 container mx-auto px-6 py-12 max-w-3xl">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-extrabold tracking-tight mb-2">Automated Outreach</h1>
-                    <p className="text-muted-foreground text-lg">Contact unverified daycares directly via their public records.</p>
-                </div>
+            <main className="flex-1 container mx-auto px-6 py-10 max-w-6xl">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                >
+                    <h1 className="text-3xl font-extrabold tracking-tight mb-2">Review your Outreach Campaign</h1>
+                    <p className="text-muted-foreground text-lg mb-8 font-medium">
+                        {isSending ? "Your campaign is being sent." : "Confirm your selection and message before sending."}
+                    </p>
+                </motion.div>
 
-                <Card className="border-border/60 shadow-sm bg-card/60 backdrop-blur-sm relative overflow-hidden">
-                    {/* Subtle aesthetic background color blur */}
-                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full mix-blend-multiply blur-3xl pointer-events-none"></div>
-
-                    <CardHeader className="pb-4 border-b border-border/40 bg-card/40">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-xl flex items-center gap-2">
-                                    <span className="relative flex h-3 w-3 mr-1">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                                    </span>
-                                    Campaign Setup
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    {/* Left Column — Review Selection (3/5) */}
+                    <div className="lg:col-span-3 space-y-4">
+                        <Card className="border-border/60 shadow-sm">
+                            <CardHeader className="pb-4 border-b border-border/40">
+                                <CardTitle className="text-lg flex items-center justify-between">
+                                    <span>Selected Daycares ({count})</span>
+                                    {!isSending && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={clearSelection}
+                                            className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs font-semibold"
+                                        >
+                                            Clear All
+                                        </Button>
+                                    )}
                                 </CardTitle>
-                                <CardDescription className="text-base mt-2 font-medium text-foreground">
-                                    Targeting <span className="text-primary font-bold">{targetCount} Unverified Daycares</span> in <span className="underline decoration-primary/30 underline-offset-4">{targetCity}</span>.
-                                </CardDescription>
-                            </div>
-                            <div className="hidden sm:flex h-12 w-12 rounded-full bg-primary/10 items-center justify-center">
-                                <MapPin className="h-6 w-6 text-primary" />
-                            </div>
-                        </div>
-                    </CardHeader>
-
-                    <CardContent className="pt-6 pb-8 space-y-6">
-                        <div className="space-y-3">
-                            <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-muted-foreground" />
-                                Message Preview
-                            </label>
-                            <div className="relative">
-                                <Textarea
-                                    readOnly
-                                    value={messageTemplate}
-                                    className="min-h-[120px] resize-none text-base bg-muted/30 focus-visible:ring-primary/40 border-border/60 p-4 font-medium leading-relaxed"
-                                />
-                                <div className="absolute bottom-3 right-3 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground bg-background/80 px-2 py-1 rounded-md border border-border/50">
-                                    <Smartphone className="h-3.5 w-3.5" />
-                                    SMS Message
-                                </div>
-                            </div>
-                            <p className="text-[13px] text-muted-foreground font-medium">
-                                This template is optimized for high response rates.
-                            </p>
-                        </div>
-                    </CardContent>
-
-                    <CardFooter className="pt-0 pb-6 border-t border-border/40 pt-6 bg-card/40">
-                        <Button
-                            size="lg"
-                            onClick={handleLaunch}
-                            className="w-full h-14 text-lg font-bold bg-gradient-to-r from-primary via-blue-600 to-indigo-600 hover:from-primary/90 hover:via-blue-600/90 hover:to-indigo-600/90 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-white border-none"
-                        >
-                            Launch Outreach Campaign
-                            <Send className="ml-2 h-5 w-5 fill-white/20" />
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </main>
-
-            {/* Progress Modal */}
-            <Dialog open={isModalOpen} onOpenChange={(open) => {
-                // Only allow closing if completed
-                if (!open && phase === "completed") {
-                    closeModal();
-                }
-            }}>
-                <DialogContent className="sm:max-w-md border-border/50 shadow-2xl [&>button]:hidden">
-                    <DialogHeader className="mb-2">
-                        <DialogTitle className="text-xl">Outreach in Progress</DialogTitle>
-                        <DialogDescription>
-                            Please wait while we contact the {targetCount} daycares.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="py-6 space-y-8">
-                        <AnimatePresence mode="wait">
-                            {phase !== "completed" ? (
-                                <motion.div
-                                    key="progress-view"
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.95, y: -20 }}
-                                    className="space-y-6"
-                                >
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center text-sm font-semibold">
-                                            <span className="text-foreground flex items-center gap-2">
-                                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                                {getPhaseMessage()}
-                                            </span>
-                                            <span className="text-muted-foreground tabular-nums">{progress}%</span>
-                                        </div>
-                                        {/* Using Framer Motion for super smooth progress bar interpolation */}
-                                        <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <div className="divide-y divide-border/40 max-h-[400px] overflow-y-auto">
+                                    <AnimatePresence>
+                                        {selectedDaycares.map((daycare) => (
                                             <motion.div
-                                                className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full"
-                                                initial={{ width: "0%" }}
-                                                animate={{ width: `${progress}%` }}
-                                                transition={{ ease: "linear", duration: 0.05 }}
-                                            />
-                                        </div>
-                                    </div>
+                                                key={daycare.id}
+                                                layout
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: 20, height: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors"
+                                            >
+                                                <div className="space-y-1 min-w-0">
+                                                    <p className="text-sm font-semibold text-foreground truncate">
+                                                        {daycare.name}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                                                        {daycare.location.city}, BC
+                                                        <span className="mx-1 text-border">•</span>
+                                                        <Smartphone className="h-3 w-3 flex-shrink-0" />
+                                                        {daycare.phone}
+                                                    </p>
+                                                </div>
+                                                {!isSending && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => toggleDaycare(daycare)}
+                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                                                        aria-label={`Remove ${daycare.name}`}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                                    <div className="flex justify-between text-xs font-semibold text-muted-foreground/70 px-1">
-                                        <span className={phase === "scraping" || phase === "generating" || phase === "sending" ? "text-primary transition-colors" : ""}>Scraping</span>
-                                        <span className={phase === "generating" || phase === "sending" ? "text-primary transition-colors" : ""}>Generating</span>
-                                        <span className={phase === "sending" ? "text-primary transition-colors" : ""}>Sending</span>
-                                    </div>
+                    {/* Right Column — Message Config OR Sending Overlay */}
+                    <div className="lg:col-span-2 space-y-4">
+                        <AnimatePresence mode="wait">
+                            {!isSending ? (
+                                /* ─── MESSAGE CONFIGURATION ─────────────── */
+                                <motion.div
+                                    key="message-config"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <Card className="border-border/60 shadow-sm">
+                                        <CardHeader className="pb-4 border-b border-border/40">
+                                            <CardTitle className="text-lg">Message Template</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="pt-5 space-y-5">
+                                            <Textarea
+                                                readOnly
+                                                value={messageTemplate}
+                                                className="min-h-[220px] resize-none text-sm bg-muted/30 focus-visible:ring-primary/40 border-border/60 p-4 font-medium leading-relaxed"
+                                            />
+                                            <p className="text-xs text-muted-foreground font-medium">
+                                                This message will be sent via SMS to all {count} selected daycares.
+                                            </p>
+
+                                            <Button
+                                                onClick={handleLaunch}
+                                                disabled={count === 0}
+                                                size="lg"
+                                                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-primary via-blue-600 to-indigo-600 hover:from-primary/90 hover:via-blue-600/90 hover:to-indigo-600/90 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-white border-none"
+                                            >
+                                                <Send className="h-5 w-5 mr-2 fill-white/20" />
+                                                Send to {count} {count === 1 ? "Daycare" : "Daycares"} Now
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
                                 </motion.div>
                             ) : (
+                                /* ─── SENDING OVERLAY CARD ──────────────── */
                                 <motion.div
-                                    key="success-view"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ type: "spring", bounce: 0.5 }}
-                                    className="flex flex-col items-center justify-center py-4 text-center space-y-4"
+                                    key="sending-overlay"
+                                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    transition={{ type: "spring", bounce: 0.3, duration: 0.5 }}
                                 >
-                                    <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center mb-2 shadow-inner border border-emerald-200">
-                                        <CheckCircle className="h-8 w-8 text-emerald-600" />
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-foreground">
-                                        {targetCount} Daycares Contacted!
-                                    </h3>
-                                    <p className="text-muted-foreground text-[15px] font-medium max-w-sm">
-                                        We will notify you immediately when they reply via SMS. Sit back and relax.
-                                    </p>
+                                    <Card className="border-border/60 shadow-2xl overflow-hidden relative">
+                                        {/* Animated gradient background */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-indigo-500/5 pointer-events-none" />
+
+                                        <CardContent className="pt-8 pb-8 px-6 relative z-10">
+                                            <AnimatePresence mode="wait">
+                                                {sendProgress < 100 ? (
+                                                    /* ─── PROGRESS VIEW ────────── */
+                                                    <motion.div
+                                                        key="progress"
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.9 }}
+                                                        className="space-y-8"
+                                                    >
+                                                        {/* Pulsing icon */}
+                                                        <div className="flex justify-center">
+                                                            <motion.div
+                                                                animate={{ scale: [1, 1.1, 1] }}
+                                                                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                                                                className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center"
+                                                            >
+                                                                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                                                            </motion.div>
+                                                        </div>
+
+                                                        {/* Status text */}
+                                                        <div className="text-center space-y-2">
+                                                            <motion.p
+                                                                key={getStatusText()}
+                                                                initial={{ opacity: 0, y: 5 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                className="text-base font-semibold text-foreground"
+                                                            >
+                                                                {getStatusText()}
+                                                            </motion.p>
+                                                            <p className="text-sm text-muted-foreground tabular-nums font-bold">
+                                                                {sendProgress}%
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Progress bar */}
+                                                        <div className="space-y-3">
+                                                            <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                                                                <motion.div
+                                                                    className="h-full bg-gradient-to-r from-primary via-blue-500 to-indigo-500 rounded-full"
+                                                                    initial={{ width: "0%" }}
+                                                                    animate={{ width: `${sendProgress}%` }}
+                                                                    transition={{ ease: "linear", duration: 0.04 }}
+                                                                />
+                                                            </div>
+                                                            <div className="flex justify-between text-[11px] font-bold text-muted-foreground/60 px-0.5">
+                                                                <span className={sendProgress >= 1 ? "text-primary" : ""}>Connecting</span>
+                                                                <span className={sendProgress >= 30 ? "text-primary" : ""}>Formatting</span>
+                                                                <span className={sendProgress >= 60 ? "text-primary" : ""}>Sending</span>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                ) : (
+                                                    /* ─── SUCCESS VIEW ──────────── */
+                                                    <motion.div
+                                                        key="success"
+                                                        initial={{ opacity: 0, scale: 0.7 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        transition={{ type: "spring", bounce: 0.5, duration: 0.6 }}
+                                                        className="space-y-6 text-center py-4"
+                                                    >
+                                                        <motion.div
+                                                            initial={{ scale: 0 }}
+                                                            animate={{ scale: 1 }}
+                                                            transition={{ type: "spring", bounce: 0.6, delay: 0.1 }}
+                                                            className="flex justify-center"
+                                                        >
+                                                            <div className="h-24 w-24 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 border-2 border-emerald-200 dark:border-emerald-800">
+                                                                <CheckCircle className="h-14 w-14 text-emerald-600 dark:text-emerald-400" />
+                                                            </div>
+                                                        </motion.div>
+
+                                                        <div className="space-y-3">
+                                                            <h3 className="text-2xl font-extrabold text-foreground tracking-tight">
+                                                                Campaign Launched!
+                                                            </h3>
+                                                            <p className="text-muted-foreground font-medium leading-relaxed text-[15px] max-w-xs mx-auto">
+                                                                We will notify you when providers reply. Sit back and relax — you just contacted{" "}
+                                                                <span className="text-primary font-bold">{count}</span> daycares!
+                                                            </p>
+                                                        </div>
+
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: 0.4 }}
+                                                        >
+                                                            <Button
+                                                                size="lg"
+                                                                className="w-full h-12 font-semibold shadow-sm rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                                                                onClick={handleReturnToDashboard}
+                                                                asChild
+                                                            >
+                                                                <Link href="/dashboard">
+                                                                    Return to Dashboard
+                                                                </Link>
+                                                            </Button>
+                                                        </motion.div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </CardContent>
+                                    </Card>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
-
-                    {phase === "completed" && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="mt-2"
-                        >
-                            <Button onClick={closeModal} className="w-full font-bold shadow-sm" variant="outline">
-                                Return to Dashboard
-                            </Button>
-                        </motion.div>
-                    )}
-                </DialogContent>
-            </Dialog>
+                </div>
+            </main>
         </div>
     );
 }

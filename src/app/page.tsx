@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, Send, CheckCircle, Menu } from "lucide-react";
 
@@ -17,9 +18,18 @@ export default function Home() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8 font-medium text-[15px] text-muted-foreground">
-            <a href="#" className="hover:text-primary transition-colors">Search</a>
-            <a href="#" className="hover:text-primary transition-colors">For Providers</a>
-            <a href="#" className="hover:text-primary transition-colors">Login</a>
+            <Link href="/dashboard" className="hover:text-primary transition-colors">Search</Link>
+            <Link href="/providers/claim" className="hover:text-primary transition-colors">For Providers</Link>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button variant="outline" size="sm" className="rounded-full font-semibold px-5">
+                  Login
+                </Button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
             <Button size="lg" className="rounded-full shadow-sm hover:shadow-md transition-all font-semibold px-6" asChild>
               <Link href="/dashboard">Find Care Now</Link>
             </Button>
@@ -53,8 +63,8 @@ export default function Home() {
                   <Search className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="text-lg h-16 w-full sm:w-auto px-10 rounded-full bg-background/50 hover:bg-muted/50 border-border/60 transition-colors">
-                How it works
+              <Button size="lg" variant="outline" className="text-lg h-16 w-full sm:w-auto px-10 rounded-full bg-background/50 hover:bg-muted/50 border-border/60 transition-colors" asChild>
+                <Link href="/how-it-works">How it works</Link>
               </Button>
             </div>
           </div>

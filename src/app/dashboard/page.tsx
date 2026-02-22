@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, MapPin, DollarSign, Calendar, Filter } from "lucide-react";
+import { Search, MapPin, DollarSign, Calendar, Filter, Phone, Mail, MessageSquare, Plus, Check } from "lucide-react";
 
 import { DAYCARES, Daycare } from "@/lib/data";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useOutreachStore } from "@/store/useOutreachStore";
+import FloatingOutreachBar from "@/components/FloatingOutreachBar";
 
 
 export default function DashboardPage() {
     const [selectedCity, setSelectedCity] = useState<string>("all");
     const [selectedAge, setSelectedAge] = useState<string>("all");
     const [showVerifiedOnly, setShowVerifiedOnly] = useState<boolean>(false);
+    const { selectedDaycares, toggleDaycare } = useOutreachStore();
 
     // Client-side filtering logic
     const filteredDaycares = useMemo(() => {
@@ -171,31 +174,54 @@ export default function DashboardPage() {
                             {filteredDaycares.map((daycare) => (
                                 <Card key={daycare.id} className="overflow-hidden group hover:shadow-md transition-all duration-300 border-border/60 flex flex-col h-full bg-card/60 hover:bg-card">
                                     <CardHeader className="pb-4">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div className="space-y-1">
+                                        <div className="flex justify-between items-start gap-3 mb-2">
+                                            <div className="space-y-1 min-w-0">
                                                 <CardTitle className="text-xl group-hover:text-primary transition-colors leading-tight line-clamp-1">
                                                     {daycare.name}
                                                 </CardTitle>
                                                 <CardDescription className="flex items-center gap-1.5 text-sm font-medium">
-                                                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                                                    <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                                                     {daycare.location.city}, BC
                                                 </CardDescription>
                                             </div>
 
-                                            {daycare.isVerified ? (
-                                                <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200 shadow-none font-semibold px-2.5 py-1 whitespace-nowrap">
-                                                    Verified Partner
+                                            {/* Availability Badge */}
+                                            {daycare.nextOpening ? (
+                                                <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200 shadow-none font-semibold px-2.5 py-1 whitespace-nowrap flex-shrink-0">
+                                                    Opening: {new Date(daycare.nextOpening).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                                                 </Badge>
                                             ) : (
-                                                <Badge variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200 shadow-none font-semibold px-2.5 py-1 whitespace-nowrap">
-                                                    Gov Record / Phone Only
+                                                <Badge variant="secondary" className="bg-slate-100 text-slate-500 hover:bg-slate-200 border-slate-200 shadow-none font-semibold px-2.5 py-1 whitespace-nowrap flex-shrink-0">
+                                                    Waitlist Only
                                                 </Badge>
                                             )}
                                         </div>
+
+                                        {/* Verified Badge */}
+                                        {daycare.isVerified && (
+                                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20 shadow-none font-semibold px-2 py-0.5 text-xs w-fit">
+                                                ✓ Verified Partner
+                                            </Badge>
+                                        )}
                                     </CardHeader>
 
-                                    <CardContent className="pb-6 flex-1">
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mt-2">
+                                    <CardContent className="pb-6 flex-1 space-y-4">
+                                        {/* Contact Info */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                                                <span className="font-medium">{daycare.phone}</span>
+                                            </div>
+                                            {daycare.email && (
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                                                    <span className="font-medium truncate">{daycare.email}</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Stats Row */}
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                                             <div className="flex flex-col gap-1.5 bg-background border border-border/50 rounded-lg p-3 flex-1 flex-shrink-0">
                                                 <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Price</span>
                                                 <span className="text-lg font-bold flex items-center">
@@ -204,21 +230,11 @@ export default function DashboardPage() {
                                                 </span>
                                             </div>
                                             <div className="flex flex-col gap-1.5 bg-background border border-border/50 rounded-lg p-3 flex-1 flex-shrink-0">
-                                                <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Availability</span>
-                                                <span className="text-[15px] font-semibold flex items-center text-foreground">
-                                                    <Calendar className="h-4 w-4 mr-1.5 text-muted-foreground" />
-                                                    {daycare.nextOpening ? (
-                                                        <span className="text-emerald-600 dark:text-emerald-500">{new Date(daycare.nextOpening).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-                                                    ) : (
-                                                        <span className="text-muted-foreground italic">Unknown</span>
-                                                    )}
+                                                <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Capacity</span>
+                                                <span className="text-lg font-bold">
+                                                    {daycare.capacity} <span className="text-sm font-medium text-muted-foreground">kids</span>
                                                 </span>
                                             </div>
-                                        </div>
-
-                                        <div className="mt-5 text-sm text-muted-foreground flex items-center gap-2">
-                                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-primary/40"></span>
-                                            Capacity: {daycare.capacity} kids
                                         </div>
                                     </CardContent>
 
@@ -226,13 +242,33 @@ export default function DashboardPage() {
                                         <div className="w-full mt-6">
                                             {daycare.isVerified ? (
                                                 <Button className="w-full font-semibold shadow-sm hover:translate-y-[-1px] transition-transform">
-                                                    View Schedule
+                                                    <Calendar className="h-4 w-4 mr-2" />
+                                                    View Schedule & Contact
                                                 </Button>
-                                            ) : (
-                                                <Button variant="outline" className="w-full font-semibold border-primary/20 text-primary hover:bg-primary/5 shadow-sm hover:translate-y-[-1px] transition-transform">
-                                                    Add to Auto-Contact List
-                                                </Button>
-                                            )}
+                                            ) : (() => {
+                                                const isSelected = selectedDaycares.some((d) => d.id === daycare.id);
+                                                return isSelected ? (
+                                                    <Button
+                                                        onClick={() => toggleDaycare(daycare)}
+                                                        className="w-full font-semibold shadow-sm hover:translate-y-[-1px] transition-transform bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                                                    >
+                                                        <Check className="h-4 w-4 mr-2" />
+                                                        Added to Campaign
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => toggleDaycare(daycare)}
+                                                        className="w-full font-semibold border-primary/20 text-primary hover:bg-primary/5 shadow-sm hover:translate-y-[-1px] transition-transform"
+                                                    >
+                                                        {daycare.contactMethod === "email" ? (
+                                                            <><Mail className="h-4 w-4 mr-2" />Add to Email Campaign</>
+                                                        ) : (
+                                                            <><Plus className="h-4 w-4 mr-2" />Add to SMS Campaign</>
+                                                        )}
+                                                    </Button>
+                                                );
+                                            })()}
                                         </div>
                                     </CardFooter>
                                 </Card>
@@ -241,6 +277,7 @@ export default function DashboardPage() {
                     )}
                 </main>
             </div>
+            <FloatingOutreachBar />
         </div>
     );
 }
