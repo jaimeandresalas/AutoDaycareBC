@@ -11,7 +11,7 @@ interface OutreachState {
 
 export const useOutreachStore = create<OutreachState>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             selectedDaycares: [],
             hasFollowUps: false,
 

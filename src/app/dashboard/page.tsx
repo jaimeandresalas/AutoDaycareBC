@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Search, MapPin, DollarSign, Calendar, Filter, Phone, Mail, MessageSquare, Plus, Check, CheckCircle2, Clock, RotateCcw, BarChart3, List, Map, Send, Loader2 } from "lucide-react";
+import { Search, MapPin, DollarSign, Filter, Phone, Mail, Plus, Check, CheckCircle2, Clock, RotateCcw, BarChart3, List, Map, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Daycare } from "@/lib/data";

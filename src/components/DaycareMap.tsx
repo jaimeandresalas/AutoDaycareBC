@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import { Daycare } from "@/lib/data";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useOutreachStore } from "@/store/useOutreachStore";
 import { MapPin, Plus, X, CheckCircle2, AlertCircle } from "lucide-react";
 
@@ -144,8 +141,8 @@ export default function DaycareMap({ daycares }: DaycareMapProps) {
                                         <button
                                             onClick={() => toggleDaycare(daycare)}
                                             className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${isSelected
-                                                    ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
-                                                    : "bg-primary text-white hover:bg-primary/90"
+                                                ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+                                                : "bg-primary text-white hover:bg-primary/90"
                                                 }`}
                                         >
                                             {isSelected ? (

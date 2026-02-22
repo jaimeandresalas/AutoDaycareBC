@@ -24,6 +24,9 @@ export default function OutreachPage() {
 
     // Parent profile state
     const [parentProfile, setParentProfile] = useState<ParentProfile | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // const { user, isLoaded: isProfileLoaded } = useUser();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [profileLoading, setProfileLoading] = useState(true);
 
     useEffect(() => {
