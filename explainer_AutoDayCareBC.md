@@ -11,7 +11,7 @@
 ---
 
 ## 🔗 Links
-- **Live Deployment URL:** [[INGRESA_TU_VERCEL_URL_AQUÍ]]
+- **Live Deployment URL:** [[https://auto-daycare-bc.vercel.app/]]
 - **GitHub Repository:** [[https://github.com/jaimeandresalas/AutoDaycareBC]]
 
 ---
