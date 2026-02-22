@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { Search, MapPin, DollarSign, Calendar, Filter, Phone, Mail, MessageSquare, Plus, Check } from "lucide-react";
+import { Search, MapPin, DollarSign, Calendar, Filter, Phone, Mail, MessageSquare, Plus, Check, Clock, RotateCcw, BarChart3 } from "lucide-react";
 
-import { DAYCARES, Daycare } from "@/lib/data";
+import { Daycare } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOutreachStore } from "@/store/useOutreachStore";
 import FloatingOutreachBar from "@/components/FloatingOutreachBar";
+import { getUserOutreachLogs, getProviders, OutreachLog } from "@/app/actions/daycareActions";
 
 
 export default function DashboardPage() {
@@ -21,10 +22,40 @@ export default function DashboardPage() {
     const [selectedAge, setSelectedAge] = useState<string>("all");
     const [showVerifiedOnly, setShowVerifiedOnly] = useState<boolean>(false);
     const { selectedDaycares, toggleDaycare } = useOutreachStore();
+    const [outreachLogs, setOutreachLogs] = useState<OutreachLog[]>([]);
+    const [allDaycares, setAllDaycares] = useState<Daycare[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch providers from Supabase + outreach history
+    useEffect(() => {
+        Promise.all([
+            getProviders(),
+            getUserOutreachLogs(),
+        ]).then(([providers, logs]) => {
+            setAllDaycares(providers);
+            setOutreachLogs(logs);
+            setIsLoading(false);
+        }).catch(() => {
+            setIsLoading(false);
+        });
+    }, []);
+
+    // Helper: get the most recent log for a provider
+    const getLatestLog = (providerId: string) => {
+        const providerLogs = outreachLogs.filter(
+            (log) => log.provider_id === providerId
+        );
+        if (providerLogs.length === 0) return null;
+        return providerLogs.reduce((latest, log) =>
+            new Date(log.sent_at) > new Date(latest.sent_at) ? log : latest
+        );
+    };
+
+    const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
     // Client-side filtering logic
     const filteredDaycares = useMemo(() => {
-        return DAYCARES.filter((daycare: Daycare) => {
+        return allDaycares.filter((daycare: Daycare) => {
             // Filter by City
             if (selectedCity !== "all" && daycare.location.city.toLowerCase() !== selectedCity.toLowerCase()) {
                 return false;
@@ -35,12 +66,9 @@ export default function DashboardPage() {
                 return false;
             }
 
-            // Filter by Age (Mocked layout - doesn't filter data as it's not strictly tied to mock data)
-            // But we leave the state ready to filter if the dataset supported it.
-
             return true;
         });
-    }, [selectedCity, showVerifiedOnly]);
+    }, [selectedCity, showVerifiedOnly, allDaycares]);
 
     const SidebarContent = () => (
         <div className="space-y-8">
@@ -100,6 +128,23 @@ export default function DashboardPage() {
                     </div>
                 </RadioGroup>
             </div>
+
+            {/* Campaign Tracker CTA */}
+            <div className="pt-2 border-t border-border/50">
+                <Link href="/analytics" className="block">
+                    <div className="group bg-gradient-to-br from-primary/5 via-blue-50 to-indigo-50 dark:from-primary/10 dark:via-blue-950/30 dark:to-indigo-950/20 border border-primary/20 rounded-xl p-4 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="bg-primary/10 group-hover:bg-primary/20 p-2 rounded-lg transition-colors">
+                                <BarChart3 className="h-5 w-5 text-primary" />
+                            </div>
+                            <h4 className="font-bold text-sm text-foreground">Campaign Tracker</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            View responses, track waitlists, and monitor your outreach performance.
+                        </p>
+                    </div>
+                </Link>
+            </div>
         </div>
     );
 
@@ -116,9 +161,15 @@ export default function DashboardPage() {
                     </Link>
 
                     <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium text-muted-foreground mr-4 hidden md:inline-block">
+                        <span className="text-sm font-medium text-muted-foreground mr-2 hidden md:inline-block">
                             Found {filteredDaycares.length} results
                         </span>
+                        <Link href="/analytics">
+                            <Button variant="ghost" size="icon" className="relative group">
+                                <BarChart3 className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                <span className="sr-only">Analytics</span>
+                            </Button>
+                        </Link>
                         <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground">
                             JS
                         </div>
@@ -151,7 +202,12 @@ export default function DashboardPage() {
                         <h2 className="text-2xl font-bold tracking-tight">Daycare Directory</h2>
                     </div>
 
-                    {filteredDaycares.length === 0 ? (
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center p-16 text-center">
+                            <div className="h-10 w-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
+                            <p className="text-muted-foreground font-medium">Loading daycares...</p>
+                        </div>
+                    ) : filteredDaycares.length === 0 ? (
                         <div className="flex flex-col items-center justify-center p-16 text-center bg-card rounded-2xl border border-dashed">
                             <Search className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
                             <h3 className="text-xl font-semibold mb-2">No daycares found</h3>
@@ -247,18 +303,74 @@ export default function DashboardPage() {
                                                 </Button>
                                             ) : (() => {
                                                 const isSelected = selectedDaycares.some((d) => d.id === daycare.id);
-                                                return isSelected ? (
-                                                    <Button
-                                                        onClick={() => toggleDaycare(daycare)}
-                                                        className="w-full font-semibold shadow-sm hover:translate-y-[-1px] transition-transform bg-emerald-600 hover:bg-emerald-700 text-white border-none"
-                                                    >
-                                                        <Check className="h-4 w-4 mr-2" />
-                                                        Added to Campaign
-                                                    </Button>
-                                                ) : (
+                                                const latestLog = getLatestLog(daycare.id);
+                                                const daysSince = latestLog
+                                                    ? Date.now() - new Date(latestLog.sent_at).getTime()
+                                                    : null;
+                                                const isRecentlyContacted = daysSince !== null && daysSince < FOURTEEN_DAYS_MS;
+                                                const isFollowUp = daysSince !== null && daysSince >= FOURTEEN_DAYS_MS;
+
+                                                if (isSelected) {
+                                                    return (
+                                                        <Button
+                                                            onClick={() => toggleDaycare(daycare, isFollowUp)}
+                                                            className="w-full font-semibold shadow-sm hover:translate-y-[-1px] transition-transform bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                                                        >
+                                                            <Check className="h-4 w-4 mr-2" />
+                                                            Added to Campaign
+                                                        </Button>
+                                                    );
+                                                }
+
+                                                if (isRecentlyContacted) {
+                                                    const contactedDate = new Date(latestLog!.sent_at).toLocaleDateString("en-CA", {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                    });
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <Badge variant="outline" className="w-full justify-center py-1.5 bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 font-semibold">
+                                                                <Clock className="h-3.5 w-3.5 mr-1.5" />
+                                                                Contacted {contactedDate} · Awaiting Reply
+                                                            </Badge>
+                                                            <Button
+                                                                variant="outline"
+                                                                disabled
+                                                                className="w-full font-semibold opacity-50 cursor-not-allowed"
+                                                            >
+                                                                Recently Contacted
+                                                            </Button>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                if (isFollowUp) {
+                                                    const contactedDate = new Date(latestLog!.sent_at).toLocaleDateString("en-CA", {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                    });
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <Badge variant="outline" className="w-full justify-center py-1.5 bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 font-semibold">
+                                                                Contacted {contactedDate}
+                                                            </Badge>
+                                                            <Button
+                                                                variant="outline"
+                                                                onClick={() => toggleDaycare(daycare, true)}
+                                                                className="w-full font-semibold border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20 shadow-sm hover:translate-y-[-1px] transition-transform"
+                                                            >
+                                                                <RotateCcw className="h-4 w-4 mr-2" />
+                                                                Add to Follow-Up Campaign
+                                                            </Button>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                // Never contacted — original labels
+                                                return (
                                                     <Button
                                                         variant="outline"
-                                                        onClick={() => toggleDaycare(daycare)}
+                                                        onClick={() => toggleDaycare(daycare, false)}
                                                         className="w-full font-semibold border-primary/20 text-primary hover:bg-primary/5 shadow-sm hover:translate-y-[-1px] transition-transform"
                                                     >
                                                         {daycare.contactMethod === "email" ? (

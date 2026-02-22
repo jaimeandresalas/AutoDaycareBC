@@ -9,16 +9,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useOutreachStore } from "@/store/useOutreachStore";
-
-const messageTemplate = `Hi! I'm a local parent looking for care for my 2-year-old starting around August 2026. Do you have any upcoming spots or an open waitlist? Please reply Y/N.
-
---
-Sent via CareConnect BC.
-Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: careconnect.bc.ca/providers`;
+import { createCampaignWithLogs } from "@/app/actions/daycareActions";
+import { getParentProfile, ParentProfile } from "@/app/actions/userActions";
+import {
+    calculateAgeInMonths,
+    buildInitialMessage,
+    buildFollowUpMessage,
+    FALLBACK_MESSAGE,
+} from "@/lib/messageUtils";
 
 export default function OutreachPage() {
-    const { selectedDaycares, toggleDaycare, clearSelection } = useOutreachStore();
+    const { selectedDaycares, toggleDaycare, clearSelection, hasFollowUps } = useOutreachStore();
     const count = selectedDaycares.length;
+
+    // Parent profile state
+    const [parentProfile, setParentProfile] = useState<ParentProfile | null>(null);
+    const [profileLoading, setProfileLoading] = useState(true);
+
+    useEffect(() => {
+        getParentProfile()
+            .then((profile) => {
+                setParentProfile(profile);
+                setProfileLoading(false);
+            })
+            .catch(() => setProfileLoading(false));
+    }, []);
+
+    // Build dynamic message from parent data
+    const messageTemplate = (() => {
+        if (!parentProfile) return FALLBACK_MESSAGE;
+        const age = calculateAgeInMonths(parentProfile.child_dob);
+        if (hasFollowUps) {
+            return buildFollowUpMessage(parentProfile.care_type_needed, age, parentProfile.expected_start_date);
+        }
+        return buildInitialMessage(parentProfile.care_type_needed, age, parentProfile.expected_start_date);
+    })();
 
     // Sending simulation state
     const [isSending, setIsSending] = useState(false);
@@ -44,9 +69,17 @@ export default function OutreachPage() {
         return () => clearInterval(interval);
     }, [isSending, sendProgress]);
 
-    const handleLaunch = () => {
+    const handleLaunch = async () => {
         setSendProgress(0);
         setIsSending(true);
+
+        // Save the campaign and logs to Supabase
+        const providerIds = selectedDaycares.map((d) => d.id);
+        const result = await createCampaignWithLogs(providerIds, hasFollowUps);
+
+        if (!result.success) {
+            console.error("Failed to save campaign:", result.error);
+        }
     };
 
     const handleReturnToDashboard = () => {

@@ -4,26 +4,33 @@ import { Daycare } from "@/lib/data";
 
 interface OutreachState {
     selectedDaycares: Daycare[];
-    toggleDaycare: (daycare: Daycare) => void;
+    hasFollowUps: boolean;
+    toggleDaycare: (daycare: Daycare, isFollowUp?: boolean) => void;
     clearSelection: () => void;
 }
 
 export const useOutreachStore = create<OutreachState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             selectedDaycares: [],
+            hasFollowUps: false,
 
-            toggleDaycare: (daycare) =>
+            toggleDaycare: (daycare, isFollowUp = false) =>
                 set((state) => {
                     const exists = state.selectedDaycares.some((d) => d.id === daycare.id);
+                    const newSelected = exists
+                        ? state.selectedDaycares.filter((d) => d.id !== daycare.id)
+                        : [...state.selectedDaycares, daycare];
+
                     return {
-                        selectedDaycares: exists
-                            ? state.selectedDaycares.filter((d) => d.id !== daycare.id)
-                            : [...state.selectedDaycares, daycare],
+                        selectedDaycares: newSelected,
+                        hasFollowUps: exists
+                            ? state.hasFollowUps // keep current value on removal
+                            : state.hasFollowUps || isFollowUp,
                     };
                 }),
 
-            clearSelection: () => set({ selectedDaycares: [] }),
+            clearSelection: () => set({ selectedDaycares: [], hasFollowUps: false }),
         }),
         {
             name: "autodaycare-selection-storage",
