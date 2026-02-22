@@ -1,7 +1,6 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabaseClient";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Daycare } from "@/lib/data";
 
@@ -16,7 +15,7 @@ export async function getProviders(): Promise<Daycare[]> {
     const { userId } = await auth();
 
     // 1. Fetch all providers
-    const { data: providers, error } = await supabase
+    const { data: providers, error } = await supabaseAdmin
         .from("providers")
         .select("*")
         .order("name", { ascending: true });
@@ -33,7 +32,7 @@ export async function getProviders(): Promise<Daycare[]> {
 
     if (userId) {
         // Fetch only the requested_spot logs for this user by joining campaigns
-        const { data: logs } = await supabase
+        const { data: logs } = await supabaseAdmin
             .from("outreach_logs")
             .select("provider_id, sent_at, campaigns!inner(parent_id)")
             .eq("provider_response_status", "requested_spot")
@@ -76,7 +75,7 @@ export async function getUserOutreachLogs(): Promise<OutreachLog[]> {
 
     if (!userId) return [];
 
-    const { data: campaigns } = await supabase
+    const { data: campaigns } = await supabaseAdmin
         .from("campaigns")
         .select("id")
         .eq("parent_id", userId);
@@ -85,7 +84,7 @@ export async function getUserOutreachLogs(): Promise<OutreachLog[]> {
 
     const campaignIds = campaigns.map((c: { id: string }) => c.id);
 
-    const { data: logs, error } = await supabase
+    const { data: logs, error } = await supabaseAdmin
         .from("outreach_logs")
         .select("provider_id, sent_at, provider_response_status")
         .in("campaign_id", campaignIds)

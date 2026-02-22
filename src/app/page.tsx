@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Send, CheckCircle, Menu, Database, Bell, UserCheck, ArrowRight } from "lucide-react";
+import { Search, MapPin, Send, CheckCircle, Menu, Database, Bell, UserCheck, ArrowRight, Lock } from "lucide-react";
 
 const steps = [
   {
@@ -128,6 +128,10 @@ export default function Home() {
                   For Providers →
                 </Link>
               </Button>
+              <p className="mt-6 text-xs text-muted-foreground/70 flex items-center gap-1.5 font-medium">
+                <Lock className="h-3.5 w-3.5" />
+                Verified Data: Synced securely with official BC Gov child care registries.
+              </p>
             </div>
           </div>
 

@@ -85,35 +85,28 @@ CREATE INDEX idx_outreach_logs_campaign_id ON outreach_logs(campaign_id);
 CREATE INDEX idx_outreach_logs_provider_id ON outreach_logs(provider_id);
 
 -- ════════════════════════════════════════════════════════════
--- ROW LEVEL SECURITY (Strict Mode)
+-- ROW LEVEL SECURITY (Strict Privacy Posture)
 -- Auth is handled by Clerk + Next.js Server Actions.
 -- Server Actions use SUPABASE_SERVICE_ROLE_KEY which bypasses RLS.
--- The anon key (used by the public client) is read-only where needed.
+-- The anon key can ONLY read from providers (public map data).
+-- All other tables are fully locked down.
 -- ════════════════════════════════════════════════════════════
 ALTER TABLE parents        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE providers      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaigns      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE outreach_logs  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE provider_leads ENABLE ROW LEVEL SECURITY;
 
 -- PROVIDERS: Public read-only (anyone can browse the map/list)
 CREATE POLICY "providers_public_read" ON providers FOR SELECT USING (true);
 
--- PARENTS: Read-only via anon key (middleware checks onboarding status)
-CREATE POLICY "parents_public_read" ON parents FOR SELECT USING (true);
+-- PARENTS: No public access (contains sensitive child data)
+-- CAMPAIGNS: No public access (contains user outreach history)
+-- OUTREACH_LOGS: No public access (contains contact records)
+-- PROVIDER_LEADS: No public access (contains business PII)
 
--- CAMPAIGNS: Read-only via anon key (analytics reads campaign IDs)
-CREATE POLICY "campaigns_public_read" ON campaigns FOR SELECT USING (true);
-
--- OUTREACH_LOGS: Read-only via anon key (analytics/dashboard reads logs)
-CREATE POLICY "outreach_logs_public_read" ON outreach_logs FOR SELECT USING (true);
-
--- PROVIDER_LEADS: No public access (all writes go through service-role)
--- No SELECT policy = not readable by anon key either
-
--- NOTE: All INSERT/UPDATE/DELETE operations are performed exclusively
--- through Next.js Server Actions using the SUPABASE_SERVICE_ROLE_KEY,
--- which bypasses RLS entirely. This ensures no client-side writes.
+-- NOTE: All SELECT/INSERT/UPDATE/DELETE operations on locked tables
+-- are performed exclusively through Next.js Server Actions using the
+-- SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS entirely.
 
 -- ════════════════════════════════════════════════════════════
 -- SEED DATA: 20 PROVIDERS (matches lib/data.ts exactly)
@@ -155,6 +148,8 @@ CREATE TABLE provider_leads (
     email           TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE provider_leads ENABLE ROW LEVEL SECURITY;
 
 -- ════════════════════════════════════════════════════════════
 -- ✅ DONE! 20 providers seeded. All IDs match Supabase production.

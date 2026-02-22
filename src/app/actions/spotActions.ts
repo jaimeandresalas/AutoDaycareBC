@@ -1,7 +1,6 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabaseClient";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { revalidatePath } from "next/cache";
 
@@ -13,7 +12,7 @@ export async function requestVerifiedSpot(providerId: string) {
     }
 
     // 1. Fetch the parent's profile for personalized request
-    const { data: parent, error: parentError } = await supabase
+    const { data: parent, error: parentError } = await supabaseAdmin
         .from("parents")
         .select("child_name, expected_start_date, care_type_needed")
         .eq("id", userId)
@@ -24,7 +23,7 @@ export async function requestVerifiedSpot(providerId: string) {
     }
 
     // 2. Check if there's already a pending request for this provider scoped to the user
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
         .from("outreach_logs")
         .select("id, campaigns!inner(parent_id)")
         .eq("provider_id", providerId)
@@ -40,7 +39,7 @@ export async function requestVerifiedSpot(providerId: string) {
     await new Promise((res) => setTimeout(res, 1500));
 
     // 4. Find or create a "Direct Requests" campaign for this user
-    let { data: directCampaign } = await supabase
+    let { data: directCampaign } = await supabaseAdmin
         .from("campaigns")
         .select("id")
         .eq("parent_id", userId)

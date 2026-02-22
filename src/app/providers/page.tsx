@@ -154,6 +154,8 @@ export default function ProviderLeadPage() {
                                                         name="phoneNumber"
                                                         type="tel"
                                                         placeholder="(604) 555-0123"
+                                                        pattern="[\d\s\(\)\-\+]{7,20}"
+                                                        title="Enter a valid phone number (e.g. (604) 555-0123)"
                                                         required
                                                         className="h-11"
                                                     />

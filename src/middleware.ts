@@ -1,26 +1,42 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/outreach(.*)", "/analytics(.*)"]);
 const isOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
 
+/**
+ * Check if user has completed onboarding.
+ * Fast path: read from Clerk JWT claims (zero latency).
+ * Fallback: query Supabase (for legacy users without metadata).
+ */
+async function isOnboarded(
+    sessionClaims: Record<string, unknown> | null,
+    userId: string
+): Promise<boolean> {
+    // Fast path: Clerk publicMetadata already has the flag
+    const meta = sessionClaims?.publicMetadata as { onboarded?: boolean } | undefined;
+    if (meta?.onboarded === true) return true;
+
+    // Fallback: check Supabase for legacy users
+    const { data } = await supabaseAdmin
+        .from("parents")
+        .select("id")
+        .eq("id", userId)
+        .single();
+
+    return !!data;
+}
+
 export default clerkMiddleware(async (auth, req) => {
-    // Protect /outreach — require authentication
+    // Protect dashboard, outreach, analytics — require authentication
     if (isProtectedRoute(req)) {
         await auth.protect();
 
-        // Check onboarding status for authenticated users on /outreach
-        const { userId } = await auth();
+        const { userId, sessionClaims } = await auth();
         if (userId) {
-            const { data } = await supabase
-                .from("parents")
-                .select("id")
-                .eq("id", userId)
-                .single();
-
-            if (!data) {
-                // User hasn't completed onboarding, redirect
+            const onboarded = await isOnboarded(sessionClaims, userId);
+            if (!onboarded) {
                 return NextResponse.redirect(new URL("/onboarding", req.url));
             }
         }
@@ -28,15 +44,10 @@ export default clerkMiddleware(async (auth, req) => {
 
     // Prevent already-onboarded users from seeing the onboarding page again
     if (isOnboardingRoute(req)) {
-        const { userId } = await auth();
+        const { userId, sessionClaims } = await auth();
         if (userId) {
-            const { data } = await supabase
-                .from("parents")
-                .select("id")
-                .eq("id", userId)
-                .single();
-
-            if (data) {
+            const onboarded = await isOnboarded(sessionClaims, userId);
+            if (onboarded) {
                 return NextResponse.redirect(new URL("/dashboard", req.url));
             }
         }

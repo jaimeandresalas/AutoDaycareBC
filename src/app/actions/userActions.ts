@@ -1,7 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabaseClient";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 interface ParentProfileData {
@@ -44,6 +43,18 @@ export async function saveParentProfile(data: ParentProfileData) {
         return { success: false, error: error.message };
     }
 
+    // Set Clerk publicMetadata so middleware can check onboarding
+    // without hitting the database on every request
+    try {
+        const client = await clerkClient();
+        await client.users.updateUserMetadata(userId, {
+            publicMetadata: { onboarded: true },
+        });
+    } catch (clerkError) {
+        console.error("Clerk metadata update error:", clerkError);
+        // Non-blocking: profile was saved, metadata will sync on next save
+    }
+
     return { success: true };
 }
 
@@ -52,7 +63,7 @@ export async function getParentProfile(): Promise<ParentProfile | null> {
 
     if (!userId) return null;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
         .from("parents")
         .select("id, child_name, child_dob, care_type_needed, expected_start_date")
         .eq("id", userId)
@@ -67,12 +78,44 @@ export async function checkOnboardingStatus(): Promise<boolean> {
 
     if (!userId) return false;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
         .from("parents")
         .select("id")
         .eq("id", userId)
         .single();
 
     if (error || !data) return false;
+    return true;
+}
+
+/**
+ * Backward-compatibility sync for legacy users.
+ * If the user already has a Supabase profile but is missing the Clerk
+ * publicMetadata.onboarded flag, this sets it automatically.
+ * Returns true if the user was already onboarded (and metadata was synced).
+ */
+export async function syncOnboardingMetadata(): Promise<boolean> {
+    const { userId } = await auth();
+
+    if (!userId) return false;
+
+    const { data } = await supabaseAdmin
+        .from("parents")
+        .select("id")
+        .eq("id", userId)
+        .single();
+
+    if (!data) return false;
+
+    // User has a profile — ensure Clerk metadata is set
+    try {
+        const client = await clerkClient();
+        await client.users.updateUserMetadata(userId, {
+            publicMetadata: { onboarded: true },
+        });
+    } catch (err) {
+        console.error("Failed to sync onboarding metadata:", err);
+    }
+
     return true;
 }

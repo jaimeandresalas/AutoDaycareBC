@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export interface CampaignAnalytics {
     totalContacted: number;
@@ -60,7 +60,7 @@ export async function getUserAnalytics(): Promise<UserAnalyticsData> {
     }
 
     // 1. Get all campaign IDs for this user
-    const { data: campaigns, error: campaignsError } = await supabase
+    const { data: campaigns, error: campaignsError } = await supabaseAdmin
         .from("campaigns")
         .select("id")
         .eq("parent_id", userId);
@@ -77,7 +77,7 @@ export async function getUserAnalytics(): Promise<UserAnalyticsData> {
 
     // Campaign-based logs (covers both automated and direct_request campaigns)
     if (campaignIds.length > 0) {
-        const { data: campaignLogs } = await supabase
+        const { data: campaignLogs } = await supabaseAdmin
             .from("outreach_logs")
             .select("id, provider_id, provider_response_status, sent_at, responded_at")
             .in("campaign_id", campaignIds);
@@ -91,7 +91,7 @@ export async function getUserAnalytics(): Promise<UserAnalyticsData> {
 
     // 3. Fetch provider data to determine is_verified for each log
     const providerIds = Array.from(new Set(allLogs.map((l) => l.provider_id)));
-    const { data: providers } = await supabase
+    const { data: providers } = await supabaseAdmin
         .from("providers")
         .select("id, name, is_verified")
         .in("id", providerIds);
