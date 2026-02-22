@@ -76,7 +76,7 @@ export async function getUserAnalytics(): Promise<UserAnalyticsData> {
     //    Direct requests have campaign_id = null, so we fetch both sets
     let allLogs: Array<{ id: string; provider_id: string; provider_response_status: string; sent_at: string; responded_at: string | null }> = [];
 
-    // Campaign-based logs
+    // Campaign-based logs (covers both automated and direct_request campaigns)
     if (campaignIds.length > 0) {
         const { data: campaignLogs } = await supabase
             .from("outreach_logs")
@@ -84,20 +84,6 @@ export async function getUserAnalytics(): Promise<UserAnalyticsData> {
             .in("campaign_id", campaignIds);
 
         if (campaignLogs) allLogs = [...campaignLogs];
-    }
-
-    // Direct request logs (campaign_id is null, so find via provider join)
-    const { data: directLogs } = await supabase
-        .from("outreach_logs")
-        .select("id, provider_id, provider_response_status, sent_at, responded_at")
-        .is("campaign_id", null);
-
-    if (directLogs) {
-        // Deduplicate by ID in case of overlap
-        const existingIds = new Set(allLogs.map((l) => l.id));
-        directLogs.forEach((log) => {
-            if (!existingIds.has(log.id)) allLogs.push(log);
-        });
     }
 
     if (allLogs.length === 0) {

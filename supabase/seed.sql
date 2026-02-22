@@ -52,7 +52,7 @@ CREATE TABLE providers (
 CREATE TABLE campaigns (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     parent_id       TEXT NOT NULL REFERENCES parents(id) ON DELETE CASCADE,
-    campaign_type   TEXT NOT NULL CHECK (campaign_type IN ('initial', 'follow_up')),
+    campaign_type   TEXT NOT NULL CHECK (campaign_type IN ('initial', 'follow_up', 'direct_request')),
     status          TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'sending', 'completed')),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -71,7 +71,8 @@ CREATE TABLE outreach_logs (
                                     'pending',
                                     'replied_no_space',
                                     'replied_waitlist',
-                                    'replied_space_available'
+                                    'replied_space_available',
+                                    'requested_spot'
                                 )),
     sent_at                     TIMESTAMPTZ NOT NULL DEFAULT now(),
     responded_at                TIMESTAMPTZ
