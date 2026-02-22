@@ -7,13 +7,21 @@ interface ResponseChartProps {
     waitlisted: number;
     spotsAvailable: number;
     rejections: number;
+    theme?: "muted" | "vibrant";
 }
 
-const COLORS = {
+const MUTED_COLORS = {
     pending: "#94a3b8",       // slate-400
-    waitlisted: "#facc15",    // yellow-400
-    spotsAvailable: "#22c55e", // green-500
-    rejections: "#ef4444",    // red-500
+    waitlisted: "#60a5fa",    // blue-400
+    spotsAvailable: "#14b8a6", // teal-500
+    rejections: "#64748b",    // slate-500
+};
+
+const VIBRANT_COLORS = {
+    pending: "#fbbf24",       // amber-400
+    waitlisted: "#f97316",    // orange-500
+    spotsAvailable: "#10b981", // emerald-500
+    rejections: "#f43f5e",    // rose-500
 };
 
 const LABELS: Record<string, string> = {
@@ -23,12 +31,14 @@ const LABELS: Record<string, string> = {
     rejections: "No Space",
 };
 
-export default function ResponsePieChart({ pending, waitlisted, spotsAvailable, rejections }: ResponseChartProps) {
+export default function ResponsePieChart({ pending, waitlisted, spotsAvailable, rejections, theme = "muted" }: ResponseChartProps) {
+    const colors = theme === "vibrant" ? VIBRANT_COLORS : MUTED_COLORS;
+
     const data = [
-        { name: "Pending", value: pending, color: COLORS.pending },
-        { name: "Waitlisted", value: waitlisted, color: COLORS.waitlisted },
-        { name: "Spots Available", value: spotsAvailable, color: COLORS.spotsAvailable },
-        { name: "No Space", value: rejections, color: COLORS.rejections },
+        { name: "Pending", value: pending, color: colors.pending },
+        { name: "Waitlisted", value: waitlisted, color: colors.waitlisted },
+        { name: "Spots Available", value: spotsAvailable, color: colors.spotsAvailable },
+        { name: "No Space", value: rejections, color: colors.rejections },
     ].filter((d) => d.value > 0);
 
     const total = pending + waitlisted + spotsAvailable + rejections;

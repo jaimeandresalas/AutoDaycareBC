@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Search, MapPin, DollarSign, Calendar, Filter, Phone, Mail, MessageSquare, Plus, Check, Clock, RotateCcw, BarChart3, List, Map, Send, Loader2 } from "lucide-react";
+import { Search, MapPin, DollarSign, Calendar, Filter, Phone, Mail, MessageSquare, Plus, Check, CheckCircle2, Clock, RotateCcw, BarChart3, List, Map, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Daycare } from "@/lib/data";
@@ -50,22 +50,19 @@ export default function DashboardPage() {
         ]).then(([providers, logs]) => {
             setAllDaycares(providers);
             setOutreachLogs(logs);
+
+            // Initialize the Set of already requested spots from the server data
+            const requested = new Set<string>();
+            providers.forEach((p) => {
+                if (p.hasRequestedSpot) requested.add(p.id);
+            });
+            setRequestedSpots(requested);
+
             setIsLoading(false);
         }).catch(() => {
             setIsLoading(false);
         });
     }, []);
-
-    // Check which providers already have a 'requested_spot' log
-    useEffect(() => {
-        const spotRequested = new Set<string>();
-        outreachLogs.forEach((log) => {
-            if (log.provider_response_status === "requested_spot") {
-                spotRequested.add(log.provider_id);
-            }
-        });
-        setRequestedSpots(spotRequested);
-    }, [outreachLogs]);
 
     // Handle direct spot request for verified daycares
     const handleDirectRequest = async (daycare: Daycare) => {
@@ -76,7 +73,12 @@ export default function DashboardPage() {
                 toast.success(`Spot request sent to ${daycare.name}!`, {
                     description: result.message,
                 });
+
+                // Optimistically update both the Set and the local exact object
                 setRequestedSpots((prev) => new Set(prev).add(daycare.id));
+                daycare.hasRequestedSpot = true;
+                daycare.requestedAt = new Date().toISOString();
+
             } else {
                 toast.error("Request failed", { description: result.error });
             }
@@ -374,14 +376,18 @@ export default function DashboardPage() {
                                                 const isRequesting = requestingId === daycare.id;
 
                                                 if (hasRequested) {
+                                                    const formattedDate = daycare.requestedAt
+                                                        ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(daycare.requestedAt))
+                                                        : "Recently";
+
                                                     return (
                                                         <Button
                                                             variant="outline"
                                                             disabled
                                                             className="w-full font-semibold bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400"
                                                         >
-                                                            <Check className="h-4 w-4 mr-2" />
-                                                            Spot Requested
+                                                            <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-500" />
+                                                            Requested on {formattedDate}
                                                         </Button>
                                                     );
                                                 }

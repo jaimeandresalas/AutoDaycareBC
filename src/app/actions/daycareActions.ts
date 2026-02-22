@@ -10,9 +10,12 @@ export interface OutreachLog {
     provider_response_status: string;
 }
 
-// Fetch all providers from Supabase and map to Daycare interface
+// Fetch all providers from Supabase and attach direct request status
 export async function getProviders(): Promise<Daycare[]> {
-    const { data, error } = await supabase
+    const { userId } = await auth();
+
+    // 1. Fetch all providers
+    const { data: providers, error } = await supabase
         .from("providers")
         .select("*")
         .order("name", { ascending: true });
@@ -22,9 +25,42 @@ export async function getProviders(): Promise<Daycare[]> {
         return [];
     }
 
-    if (!data) return [];
+    if (!providers) return [];
 
-    return data.map((p) => ({
+    // 2. Fetch user's direct request logs if authenticated
+    const spotRequests = new Map<string, string>(); // provider_id -> sent_at
+
+    if (userId) {
+        // Find the user's campaigns
+        const { data: campaigns } = await supabase
+            .from("campaigns")
+            .select("id")
+            .eq("parent_id", userId);
+
+        if (campaigns && campaigns.length > 0) {
+            const campaignIds = campaigns.map((c) => c.id);
+
+            // Fetch only the requested_spot logs for this user
+            const { data: logs } = await supabase
+                .from("outreach_logs")
+                .select("provider_id, sent_at")
+                .in("campaign_id", campaignIds)
+                .eq("provider_response_status", "requested_spot");
+
+            if (logs) {
+                // Determine the most recent request date for each provider
+                logs.forEach((log) => {
+                    const existingRaw = spotRequests.get(log.provider_id);
+                    if (!existingRaw || new Date(log.sent_at) > new Date(existingRaw)) {
+                        spotRequests.set(log.provider_id, log.sent_at);
+                    }
+                });
+            }
+        }
+    }
+
+    // 3. Map to Daycare interface, attaching the request history
+    return providers.map((p) => ({
         id: p.id,
         name: p.name,
         isVerified: p.is_verified,
@@ -39,6 +75,8 @@ export async function getProviders(): Promise<Daycare[]> {
         capacity: p.total_capacity,
         nextOpening: p.next_opening || null,
         priceMonth: p.price_month || 0,
+        hasRequestedSpot: spotRequests.has(p.id),
+        requestedAt: spotRequests.get(p.id) || null,
     }));
 }
 

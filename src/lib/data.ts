@@ -17,6 +17,8 @@ export interface Daycare {
     capacity: number;
     nextOpening: string | null;
     priceMonth: number;
+    hasRequestedSpot?: boolean;
+    requestedAt?: string | null;
 }
 
 export const DAYCARES: Daycare[] = [

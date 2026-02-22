@@ -51,7 +51,7 @@ export function buildInitialMessage(
     return `Hi! I'm a local parent looking for ${careStr} for my ${ageInMonths}-month-old child, starting exactly on ${dateStr}. Do you have any upcoming spots or an open waitlist? Please reply Y/N.
 
 --
-Sent via CareConnect BC.
+Sent via AutoDayCare BC.
 Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: autodaycarebc/providers`;
 }
 
@@ -67,7 +67,7 @@ export function buildFollowUpMessage(
     return `Hi, I reached out a few weeks ago about ${careStr} for my ${ageInMonths}-month-old child (start date: ${dateStr}). Just following up — have any spots opened up, or is there still a waitlist? Please reply Y/N.
 
 --
-Sent via CareConnect BC.
+Sent via AutoDayCare BC.
 Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: autodaycarebc/providers`;
 }
 
@@ -75,5 +75,5 @@ Tired of answering the same availability questions? Claim your free profile to s
 export const FALLBACK_MESSAGE = `Hi! I'm a local parent looking for care for my child. Do you have any upcoming spots or an open waitlist? Please reply Y/N.
 
 --
-Sent via CareConnect BC.
+Sent via AutoDayCare BC.
 Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: autodaycarebc/providers`;

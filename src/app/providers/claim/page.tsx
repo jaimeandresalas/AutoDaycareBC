@@ -74,7 +74,7 @@ export default function ProviderClaimPage() {
                         Claim Your Daycare
                     </h1>
                     <p className="text-muted-foreground mt-2 max-w-sm font-medium">
-                        Join CareConnect BC to take control of your waitlist and availability.
+                        Join AutoDayCare BC to take control of your waitlist and availability.
                     </p>
                 </div>
             </div>
@@ -239,7 +239,7 @@ export default function ProviderClaimPage() {
                                         You&apos;re Live!
                                     </h2>
                                     <p className="text-lg text-emerald-800/80 dark:text-emerald-300 font-medium mb-8 leading-snug max-w-[250px]">
-                                        Your profile is now Live and Verified on CareConnect BC.
+                                        Your profile is now Live and Verified on AutoDayCare BC.
                                     </p>
 
                                     <div className="w-full space-y-3">

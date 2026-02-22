@@ -105,7 +105,7 @@ export async function getUserAnalytics(): Promise<UserAnalyticsData> {
     }
 
     // 3. Fetch provider data to determine is_verified for each log
-    const providerIds = [...new Set(allLogs.map((l) => l.provider_id))];
+    const providerIds = Array.from(new Set(allLogs.map((l) => l.provider_id)));
     const { data: providers } = await supabase
         .from("providers")
         .select("id, name, is_verified")

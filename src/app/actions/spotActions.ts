@@ -37,11 +37,37 @@ export async function requestVerifiedSpot(providerId: string) {
     // 3. Simulate email sending (SendGrid / Resend mock)
     await new Promise((res) => setTimeout(res, 1500));
 
-    // 4. Insert the outreach log (campaign_id is null for direct requests)
+    // 4. Find or create a "Direct Requests" campaign for this user
+    let { data: directCampaign } = await supabase
+        .from("campaigns")
+        .select("id")
+        .eq("parent_id", userId)
+        .eq("campaign_type", "direct_request")
+        .single();
+
+    if (!directCampaign) {
+        const { data: newCampaign, error: newCampaignError } = await supabase
+            .from("campaigns")
+            .insert({
+                parent_id: userId,
+                campaign_type: "direct_request",
+                status: "completed",
+            })
+            .select("id")
+            .single();
+
+        if (newCampaignError || !newCampaign) {
+            console.error("Error creating direct request campaign:", newCampaignError);
+            return { success: false, error: "System error: Could not initialize spot request tracking." };
+        }
+        directCampaign = newCampaign;
+    }
+
+    // 5. Insert the outreach log scoped to the Direct Requests campaign
     const { error: insertError } = await supabase
         .from("outreach_logs")
         .insert({
-            campaign_id: null,
+            campaign_id: directCampaign.id,
             provider_id: providerId,
             provider_response_status: "requested_spot",
         });

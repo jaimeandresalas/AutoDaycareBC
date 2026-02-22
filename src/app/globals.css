@@ -2,23 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 }
 
-
-
 @layer base {
   :root {
-    --background: 35 33% 96%; /* Warm Beige */
+    --background: 35 33% 96%;
+    /* Warm Beige */
     --foreground: 220 20% 20%;
     --card: 0 0% 100%;
     --card-foreground: 220 20% 20%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 20%;
-    --primary: 215 60% 45%; /* Safe Blue */
+    --primary: 215 60% 45%;
+    /* Safe Blue */
     --primary-foreground: 0 0% 100%;
     --secondary: 35 20% 90%;
     --secondary-foreground: 215 60% 45%;
