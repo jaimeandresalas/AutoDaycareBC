@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Send, CheckCircle, Menu, Database, Bell, UserCheck, ArrowRight, Lock } from "lucide-react";
+import { Search, MapPin, Send, CheckCircle, Menu, Database, Bell, UserCheck, ArrowRight, Lock, Quote } from "lucide-react";
 
 const steps = [
   {
@@ -235,6 +235,76 @@ export default function Home() {
                   </motion.div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        {/* TESTIMONIALS SECTION */}
+        <section className="py-20 md:py-28 bg-muted/30 border-y border-border/40">
+          <div className="container mx-auto px-6 max-w-6xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-14"
+            >
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4">
+                Trusted by BC Parents
+              </h2>
+              <p className="text-lg text-muted-foreground font-medium">
+                Real families who found care faster with AutoDayCare BC.
+              </p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+              {[
+                {
+                  quote: "I spent months calling daycares with no luck. Within 48 hours of using AutoDayCareBC, I had three viewings lined up in Coquitlam. The auto-outreach is a game-changer.",
+                  author: "Sarah L.",
+                  role: "Working Mom",
+                  initials: "SL",
+                  color: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
+                },
+                {
+                  quote: "The phone tag nightmare is real. This tool did the heavy lifting for us. We secured a verified spot for our toddler just in time for my return to work.",
+                  author: "Michael Chen",
+                  role: "Burnaby",
+                  initials: "MC",
+                  color: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
+                },
+                {
+                  quote: "Finally, a map that actually makes sense. Seeing which providers are active versus just a phone number from a government list saved us so much time.",
+                  author: "The Patel Family",
+                  role: "Vancouver",
+                  initials: "PF",
+                  color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
+                },
+              ].map((t, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.1 }}
+                >
+                  <div className="bg-background rounded-2xl border border-border/60 p-6 lg:p-8 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
+                    <Quote className="h-8 w-8 text-primary/20 mb-4 flex-shrink-0" />
+                    <p className="text-foreground/80 leading-relaxed mb-6 flex-1 text-[15px]">
+                      &ldquo;{t.quote}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-3 pt-4 border-t border-border/40">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${t.color}`}>
+                        {t.initials}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm text-foreground">{t.author}</p>
+                        <p className="text-xs text-muted-foreground">{t.role}</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
