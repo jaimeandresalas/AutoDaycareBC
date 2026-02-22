@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { Search, MapPin, DollarSign, Calendar, Filter, Phone, Mail, MessageSquare, Plus, Check, Clock, RotateCcw, BarChart3 } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Search, MapPin, DollarSign, Calendar, Filter, Phone, Mail, MessageSquare, Plus, Check, Clock, RotateCcw, BarChart3, List, Map, Send, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Daycare } from "@/lib/data";
 import { Button } from "@/components/ui/button";
@@ -15,16 +17,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useOutreachStore } from "@/store/useOutreachStore";
 import FloatingOutreachBar from "@/components/FloatingOutreachBar";
 import { getUserOutreachLogs, getProviders, OutreachLog } from "@/app/actions/daycareActions";
+import { requestVerifiedSpot } from "@/app/actions/spotActions";
+
+const DaycareMap = dynamic(() => import("@/components/DaycareMap"), {
+    ssr: false,
+    loading: () => (
+        <div className="h-[600px] w-full rounded-xl bg-muted/50 border border-border/60 flex flex-col items-center justify-center">
+            <div className="h-8 w-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
+            <p className="text-sm text-muted-foreground font-medium">Loading map...</p>
+        </div>
+    ),
+});
 
 
 export default function DashboardPage() {
     const [selectedCity, setSelectedCity] = useState<string>("all");
     const [selectedAge, setSelectedAge] = useState<string>("all");
     const [showVerifiedOnly, setShowVerifiedOnly] = useState<boolean>(false);
+    const [viewMode, setViewMode] = useState<"list" | "map">("list");
     const { selectedDaycares, toggleDaycare } = useOutreachStore();
     const [outreachLogs, setOutreachLogs] = useState<OutreachLog[]>([]);
     const [allDaycares, setAllDaycares] = useState<Daycare[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [requestedSpots, setRequestedSpots] = useState<Set<string>>(new Set());
+    const [requestingId, setRequestingId] = useState<string | null>(null);
 
     // Fetch providers from Supabase + outreach history
     useEffect(() => {
@@ -39,6 +55,37 @@ export default function DashboardPage() {
             setIsLoading(false);
         });
     }, []);
+
+    // Check which providers already have a 'requested_spot' log
+    useEffect(() => {
+        const spotRequested = new Set<string>();
+        outreachLogs.forEach((log) => {
+            if (log.provider_response_status === "requested_spot") {
+                spotRequested.add(log.provider_id);
+            }
+        });
+        setRequestedSpots(spotRequested);
+    }, [outreachLogs]);
+
+    // Handle direct spot request for verified daycares
+    const handleDirectRequest = async (daycare: Daycare) => {
+        setRequestingId(daycare.id);
+        try {
+            const result = await requestVerifiedSpot(daycare.id);
+            if (result.success) {
+                toast.success(`Spot request sent to ${daycare.name}!`, {
+                    description: result.message,
+                });
+                setRequestedSpots((prev) => new Set(prev).add(daycare.id));
+            } else {
+                toast.error("Request failed", { description: result.error });
+            }
+        } catch {
+            toast.error("Something went wrong. Please try again.");
+        } finally {
+            setRequestingId(null);
+        }
+    };
 
     // Helper: get the most recent log for a provider
     const getLatestLog = (providerId: string) => {
@@ -200,6 +247,30 @@ export default function DashboardPage() {
                 <main className="flex-1">
                     <div className="flex justify-between items-center mb-6 hidden md:flex">
                         <h2 className="text-2xl font-bold tracking-tight">Daycare Directory</h2>
+
+                        {/* View Toggle */}
+                        <div className="flex items-center bg-muted rounded-lg p-1 gap-0.5">
+                            <button
+                                onClick={() => setViewMode("list")}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === "list"
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                            >
+                                <List className="h-4 w-4" />
+                                List
+                            </button>
+                            <button
+                                onClick={() => setViewMode("map")}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === "map"
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                            >
+                                <Map className="h-4 w-4" />
+                                Map
+                            </button>
+                        </div>
                     </div>
 
                     {isLoading ? (
@@ -225,6 +296,8 @@ export default function DashboardPage() {
                                 Clear Filters
                             </Button>
                         </div>
+                    ) : viewMode === "map" ? (
+                        <DaycareMap daycares={filteredDaycares} />
                     ) : (
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                             {filteredDaycares.map((daycare) => (
@@ -296,12 +369,45 @@ export default function DashboardPage() {
 
                                     <CardFooter className="pt-0 pb-6 border-t border-border/40 mt-auto bg-card/40 flex">
                                         <div className="w-full mt-6">
-                                            {daycare.isVerified ? (
-                                                <Button className="w-full font-semibold shadow-sm hover:translate-y-[-1px] transition-transform">
-                                                    <Calendar className="h-4 w-4 mr-2" />
-                                                    View Schedule & Contact
-                                                </Button>
-                                            ) : (() => {
+                                            {daycare.isVerified ? (() => {
+                                                const hasRequested = requestedSpots.has(daycare.id);
+                                                const isRequesting = requestingId === daycare.id;
+
+                                                if (hasRequested) {
+                                                    return (
+                                                        <Button
+                                                            variant="outline"
+                                                            disabled
+                                                            className="w-full font-semibold bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400"
+                                                        >
+                                                            <Check className="h-4 w-4 mr-2" />
+                                                            Spot Requested
+                                                        </Button>
+                                                    );
+                                                }
+
+                                                if (isRequesting) {
+                                                    return (
+                                                        <Button
+                                                            disabled
+                                                            className="w-full font-semibold shadow-sm"
+                                                        >
+                                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                            Sending Request...
+                                                        </Button>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <Button
+                                                        onClick={() => handleDirectRequest(daycare)}
+                                                        className="w-full font-semibold shadow-sm hover:translate-y-[-1px] transition-transform"
+                                                    >
+                                                        <Send className="h-4 w-4 mr-2" />
+                                                        Request Spot Now
+                                                    </Button>
+                                                );
+                                            })() : (() => {
                                                 const isSelected = selectedDaycares.some((d) => d.id === daycare.id);
                                                 const latestLog = getLatestLog(daycare.id);
                                                 const daysSince = latestLog
