@@ -56,7 +56,7 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-8 font-medium text-[15px] text-muted-foreground">
             <Link href="#how-it-works" className="hover:text-primary transition-colors">How it Works</Link>
             <Link href="/dashboard" className="hover:text-primary transition-colors">Search</Link>
-            <Link href="/providers/claim" className="hover:text-primary transition-colors">For Providers</Link>
+            <Link href="/providers" className="hover:text-primary transition-colors">For Providers</Link>
             <SignedOut>
               <SignInButton mode="modal">
                 <Button variant="outline" size="sm" className="rounded-full font-semibold px-5">
