@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Daycare } from "@/lib/data";
 
 export interface OutreachLog {
@@ -108,7 +109,7 @@ export async function createCampaignWithLogs(
         return { success: false, error: "Unauthorized" };
     }
 
-    const { data: campaign, error: campaignError } = await supabase
+    const { data: campaign, error: campaignError } = await supabaseAdmin
         .from("campaigns")
         .insert({
             parent_id: userId,
@@ -129,7 +130,7 @@ export async function createCampaignWithLogs(
         provider_response_status: "pending",
     }));
 
-    const { error: logsError } = await supabase
+    const { error: logsError } = await supabaseAdmin
         .from("outreach_logs")
         .insert(logEntries);
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export interface ProviderLeadData {
     daycareName: string;
@@ -9,7 +9,7 @@ export interface ProviderLeadData {
 }
 
 export async function saveProviderLead(data: ProviderLeadData) {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
         .from("provider_leads")
         .insert({
             daycare_name: data.daycareName,

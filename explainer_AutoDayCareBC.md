@@ -62,3 +62,20 @@ AutoDayCare BC bridges the gap between modern parents and legacy daycare operati
 | **Database** | Supabase (PostgreSQL) storing parent profiles, provider data, and outreach logs via Server Actions |
 | **Data Viz** | Recharts & React-Leaflet |
 | **Deployment** | Vercel |
+
+---
+
+## 🧪 Testing Guide for Judges
+
+### Test Credentials
+To test the full authenticated flow without creating an account, use the following verified Clerk credentials:
+- **Email/User:** `test_user`
+- **Password:** `test_user_2026`
+
+*(You are also welcome to create your own account to experience the complete onboarding flow.)*
+
+### Database Seed
+Ensure you run the `supabase/seed.sql` script in the Supabase SQL Editor to generate the 20 mock providers and create the necessary `provider_leads` table before testing the Provider portal at `/providers`.
+
+### Architecture Note: Server Actions Only
+This application does **not** use any Next.js API route handlers (`/app/api`). All database mutations (creating campaigns, inserting outreach logs, saving parent profiles, and capturing provider leads) are performed **strictly through Next.js Server Actions** located in `src/app/actions/`. These Server Actions use a `SUPABASE_SERVICE_ROLE_KEY` to bypass Row Level Security (RLS) safely on the server, while the public anon key is restricted to read-only access.

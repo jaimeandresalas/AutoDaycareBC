@@ -56,7 +56,10 @@ NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL=/dashboard
 # Supabase backend
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
+
+> **Note:** The `SUPABASE_SERVICE_ROLE_KEY` is a server-only secret that bypasses Row Level Security (RLS). It is **never** exposed to the browser — it is only used inside Next.js Server Actions. You can find it in your Supabase Dashboard under **Settings → API → Service Role Key**.
 
 ### 3. Database Setup (Supabase Seed)
 To populate the database with the mock BC government providers and ensure the Row Level Security (RLS) constraints are correct, you need to run the provided SQL seed script:

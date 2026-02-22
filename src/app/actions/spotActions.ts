@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { revalidatePath } from "next/cache";
 
 export async function requestVerifiedSpot(providerId: string) {
@@ -47,7 +48,7 @@ export async function requestVerifiedSpot(providerId: string) {
         .single();
 
     if (!directCampaign) {
-        const { data: newCampaign, error: newCampaignError } = await supabase
+        const { data: newCampaign, error: newCampaignError } = await supabaseAdmin
             .from("campaigns")
             .insert({
                 parent_id: userId,
@@ -65,7 +66,7 @@ export async function requestVerifiedSpot(providerId: string) {
     }
 
     // 5. Insert the outreach log scoped to the Direct Requests campaign
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseAdmin
         .from("outreach_logs")
         .insert({
             campaign_id: directCampaign.id,

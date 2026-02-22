@@ -85,18 +85,35 @@ CREATE INDEX idx_outreach_logs_campaign_id ON outreach_logs(campaign_id);
 CREATE INDEX idx_outreach_logs_provider_id ON outreach_logs(provider_id);
 
 -- ════════════════════════════════════════════════════════════
--- ROW LEVEL SECURITY
+-- ROW LEVEL SECURITY (Strict Mode)
+-- Auth is handled by Clerk + Next.js Server Actions.
+-- Server Actions use SUPABASE_SERVICE_ROLE_KEY which bypasses RLS.
+-- The anon key (used by the public client) is read-only where needed.
 -- ════════════════════════════════════════════════════════════
 ALTER TABLE parents        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE providers      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaigns      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE outreach_logs  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE provider_leads ENABLE ROW LEVEL SECURITY;
 
--- Permissive policies (auth handled by Clerk, not Supabase Auth)
-CREATE POLICY "allow_all_parents"        ON parents        FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all_providers"      ON providers      FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all_campaigns"      ON campaigns      FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all_outreach_logs"  ON outreach_logs  FOR ALL USING (true) WITH CHECK (true);
+-- PROVIDERS: Public read-only (anyone can browse the map/list)
+CREATE POLICY "providers_public_read" ON providers FOR SELECT USING (true);
+
+-- PARENTS: Read-only via anon key (middleware checks onboarding status)
+CREATE POLICY "parents_public_read" ON parents FOR SELECT USING (true);
+
+-- CAMPAIGNS: Read-only via anon key (analytics reads campaign IDs)
+CREATE POLICY "campaigns_public_read" ON campaigns FOR SELECT USING (true);
+
+-- OUTREACH_LOGS: Read-only via anon key (analytics/dashboard reads logs)
+CREATE POLICY "outreach_logs_public_read" ON outreach_logs FOR SELECT USING (true);
+
+-- PROVIDER_LEADS: No public access (all writes go through service-role)
+-- No SELECT policy = not readable by anon key either
+
+-- NOTE: All INSERT/UPDATE/DELETE operations are performed exclusively
+-- through Next.js Server Actions using the SUPABASE_SERVICE_ROLE_KEY,
+-- which bypasses RLS entirely. This ensures no client-side writes.
 
 -- ════════════════════════════════════════════════════════════
 -- SEED DATA: 20 PROVIDERS (matches lib/data.ts exactly)
@@ -129,10 +146,22 @@ INSERT INTO providers (id, name, phone, city, lat, lng, is_verified, total_capac
 ('d20', 'Austin Heights Kindergarten',       '+1-604-555-2020', 'Coquitlam',  49.2510000, -122.8710000, false, 20, '{"full-time"}');
 
 -- ════════════════════════════════════════════════════════════
--- ✅ DONE! 20 providers seeded. All IDs match lib/data.ts.
+-- 5. PROVIDER_LEADS (Smoke Test / Lead Generation)
+-- ════════════════════════════════════════════════════════════
+CREATE TABLE provider_leads (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    daycare_name    TEXT NOT NULL,
+    phone_number    TEXT,
+    email           TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ════════════════════════════════════════════════════════════
+-- ✅ DONE! 20 providers seeded. All IDs match Supabase production.
 -- The full chain now works:
 --   parents.id (TEXT) ← Clerk user ID
 --   campaigns.parent_id (TEXT) → parents.id
 --   outreach_logs.campaign_id (UUID) → campaigns.id
 --   outreach_logs.provider_id (TEXT) → providers.id ← ✅ matches "d1","d2",...
+--   provider_leads ← standalone table for provider smoke test form
 -- ════════════════════════════════════════════════════════════

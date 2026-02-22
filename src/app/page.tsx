@@ -123,6 +123,11 @@ export default function Home() {
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
                 Takes 2 minutes to set up
               </p>
+              <Button size="lg" variant="outline" className="mt-4 text-base h-14 px-10 rounded-full bg-background/50 hover:bg-muted/50 border-border/60 font-semibold transition-all" asChild>
+                <Link href="/providers">
+                  For Providers →
+                </Link>
+              </Button>
             </div>
           </div>
 

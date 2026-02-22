@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 interface ParentProfileData {
     childName: string;
@@ -25,7 +26,7 @@ export async function saveParentProfile(data: ParentProfileData) {
         return { success: false, error: "Unauthorized" };
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
         .from("parents")
         .upsert(
             {
