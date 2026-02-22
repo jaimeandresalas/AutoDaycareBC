@@ -96,6 +96,18 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to explore
 - `src/store/` - Zustand global state stores.
 - `supabase/` - SQL migration and mock seed scripts.
 
+## 🧪 Testing Credentials (For Judges)
+To speed up your evaluation without needing to sign up, you can use the following test account:
+- **Email/User:** `test_user`
+- **Password:** `test_user_2026`
+
+*(You are also welcome to create your own account from scratch to experience the full onboarding flow!)*
+
+---
+
+## 🔒 Security Note
+All persistent data generated during this application's usage is stored in a securely encrypted Supabase PostgreSQL database. Communication with the backend is fully authenticated via Clerk Middleware, and direct SQL operations are restricted via Row Level Security (RLS) policies.
+
 ---
 
 > Built with ❤️ for parents in British Columbia.

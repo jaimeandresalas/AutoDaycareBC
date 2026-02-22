@@ -22,12 +22,13 @@ export async function requestVerifiedSpot(providerId: string) {
         return { success: false, error: "Please complete onboarding before requesting a spot." };
     }
 
-    // 2. Check if there's already a pending request for this provider
+    // 2. Check if there's already a pending request for this provider scoped to the user
     const { data: existing } = await supabase
         .from("outreach_logs")
-        .select("id")
+        .select("id, campaigns!inner(parent_id)")
         .eq("provider_id", providerId)
         .eq("provider_response_status", "requested_spot")
+        .eq("campaigns.parent_id", userId)
         .limit(1);
 
     if (existing && existing.length > 0) {

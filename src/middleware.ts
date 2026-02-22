@@ -2,7 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 
-const isProtectedRoute = createRouteMatcher(["/outreach(.*)"]);
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/outreach(.*)", "/analytics(.*)"]);
 const isOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {

@@ -43,7 +43,10 @@ CREATE TABLE providers (
     waitlist_length_months  INTEGER,
     care_type_offered       TEXT[] DEFAULT '{}',
     educational_approach    TEXT,
-    last_updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+    last_updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    price_month             INTEGER NOT NULL DEFAULT 0,
+    next_opening            DATE,
+    contact_method          TEXT NOT NULL DEFAULT 'phone_only'
 );
 
 -- ════════════════════════════════════════════════════════════

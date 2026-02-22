@@ -52,7 +52,7 @@ export function buildInitialMessage(
 
 --
 Sent via AutoDayCare BC.
-Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: autodaycarebc/providers`;
+Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: https://auto-daycare-bc.vercel.app/providers`;
 }
 
 /** Build the follow-up message */
@@ -68,7 +68,7 @@ export function buildFollowUpMessage(
 
 --
 Sent via AutoDayCare BC.
-Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: autodaycarebc/providers`;
+Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: https://auto-daycare-bc.vercel.app/providers`;
 }
 
 /** Fallback when parent data is unavailable */
@@ -76,4 +76,4 @@ export const FALLBACK_MESSAGE = `Hi! I'm a local parent looking for care for my 
 
 --
 Sent via AutoDayCare BC.
-Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: autodaycarebc/providers`;
+Tired of answering the same availability questions? Claim your free profile to show your real-time status to thousands of local parents: https://auto-daycare-bc.vercel.app/providers`;

@@ -31,31 +31,21 @@ export async function getProviders(): Promise<Daycare[]> {
     const spotRequests = new Map<string, string>(); // provider_id -> sent_at
 
     if (userId) {
-        // Find the user's campaigns
-        const { data: campaigns } = await supabase
-            .from("campaigns")
-            .select("id")
-            .eq("parent_id", userId);
+        // Fetch only the requested_spot logs for this user by joining campaigns
+        const { data: logs } = await supabase
+            .from("outreach_logs")
+            .select("provider_id, sent_at, campaigns!inner(parent_id)")
+            .eq("provider_response_status", "requested_spot")
+            .eq("campaigns.parent_id", userId);
 
-        if (campaigns && campaigns.length > 0) {
-            const campaignIds = campaigns.map((c) => c.id);
-
-            // Fetch only the requested_spot logs for this user
-            const { data: logs } = await supabase
-                .from("outreach_logs")
-                .select("provider_id, sent_at")
-                .in("campaign_id", campaignIds)
-                .eq("provider_response_status", "requested_spot");
-
-            if (logs) {
-                // Determine the most recent request date for each provider
-                logs.forEach((log) => {
-                    const existingRaw = spotRequests.get(log.provider_id);
-                    if (!existingRaw || new Date(log.sent_at) > new Date(existingRaw)) {
-                        spotRequests.set(log.provider_id, log.sent_at);
-                    }
-                });
-            }
+        if (logs) {
+            // Determine the most recent request date for each provider
+            logs.forEach((log) => {
+                const existingRaw = spotRequests.get(log.provider_id);
+                if (!existingRaw || new Date(log.sent_at) > new Date(existingRaw)) {
+                    spotRequests.set(log.provider_id, log.sent_at);
+                }
+            });
         }
     }
 

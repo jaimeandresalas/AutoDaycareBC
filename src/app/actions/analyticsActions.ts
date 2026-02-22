@@ -73,7 +73,6 @@ export async function getUserAnalytics(): Promise<UserAnalyticsData> {
     const campaignIds = (campaigns || []).map((c) => c.id);
 
     // 2. Fetch ALL outreach logs for this user (campaign-based + direct requests)
-    //    Direct requests have campaign_id = null, so we fetch both sets
     let allLogs: Array<{ id: string; provider_id: string; provider_response_status: string; sent_at: string; responded_at: string | null }> = [];
 
     // Campaign-based logs (covers both automated and direct_request campaigns)
