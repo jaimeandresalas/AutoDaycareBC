@@ -24,13 +24,6 @@ const VIBRANT_COLORS = {
     rejections: "#f43f5e",    // rose-500
 };
 
-const LABELS: Record<string, string> = {
-    pending: "Pending",
-    waitlisted: "Waitlisted",
-    spotsAvailable: "Spots Available",
-    rejections: "No Space",
-};
-
 export default function ResponsePieChart({ pending, waitlisted, spotsAvailable, rejections, theme = "muted" }: ResponseChartProps) {
     const colors = theme === "vibrant" ? VIBRANT_COLORS : MUTED_COLORS;
 
@@ -74,15 +67,11 @@ export default function ResponsePieChart({ pending, waitlisted, spotsAvailable, 
                     contentStyle={{
                         backgroundColor: "hsl(var(--card))",
                         border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        fontSize: "14px",
                     }}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    formatter={((value: number, name: string) => [
-                        `${value} (${Math.round((value / total) * 100)}%)`,
-                        name,
-                    ]) as any}
+                    labelFormatter={((value: unknown, name: unknown) => [
+                        `${value as number} (${Math.round(((value as number) / total) * 100)}%)`,
+                        name as string,
+                    ])}
                 />
                 <Legend
                     verticalAlign="bottom"

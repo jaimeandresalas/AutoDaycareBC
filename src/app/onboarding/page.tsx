@@ -36,9 +36,7 @@ const onboardingSchema = z.object({
     expectedStartDate: z
         .string()
         .min(1, "Expected start date is required"),
-    careTypeNeeded: z.enum(["full-time", "part-time", "both"], {
-        required_error: "Please select a care type",
-    }),
+    careTypeNeeded: z.enum(["full-time", "part-time", "both"]),
 });
 
 type OnboardingFormData = z.infer<typeof onboardingSchema>;
@@ -215,8 +213,8 @@ export default function OnboardingPage() {
                                                                 key={option.value}
                                                                 htmlFor={`care-${option.value}`}
                                                                 className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3.5 cursor-pointer font-semibold text-sm transition-all ${field.value === option.value
-                                                                        ? "border-primary bg-primary/5 text-primary shadow-sm"
-                                                                        : "border-border/60 bg-background hover:border-primary/30 text-muted-foreground hover:text-foreground"
+                                                                    ? "border-primary bg-primary/5 text-primary shadow-sm"
+                                                                    : "border-border/60 bg-background hover:border-primary/30 text-muted-foreground hover:text-foreground"
                                                                     }`}
                                                             >
                                                                 <RadioGroupItem
