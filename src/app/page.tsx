@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, Send, CheckCircle, Menu } from "lucide-react";
 
@@ -7,20 +8,20 @@ export default function Home() {
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <div className="bg-primary text-primary-foreground p-2 rounded-xl shadow-sm">
               <Search className="h-6 w-6" />
             </div>
             <span className="text-2xl font-bold tracking-tight text-primary">AutoDayCare BC</span>
-          </div>
+          </Link>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8 font-medium text-[15px] text-muted-foreground">
             <a href="#" className="hover:text-primary transition-colors">Search</a>
             <a href="#" className="hover:text-primary transition-colors">For Providers</a>
             <a href="#" className="hover:text-primary transition-colors">Login</a>
-            <Button size="lg" className="rounded-full shadow-sm hover:shadow-md transition-all font-semibold px-6">
-              Find Care Now
+            <Button size="lg" className="rounded-full shadow-sm hover:shadow-md transition-all font-semibold px-6" asChild>
+              <Link href="/dashboard">Find Care Now</Link>
             </Button>
           </nav>
 
@@ -33,7 +34,7 @@ export default function Home() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative px-6 pt-24 pb-32 md:pt-36 md:pb-48 overflow-hidden">
+        <section className="relative px-6 pt-24 pb-8 md:pt-36 md:pb-12 overflow-hidden">
           <div className="container mx-auto max-w-5xl text-center flex flex-col items-center relative z-10">
             <div className="inline-flex items-center rounded-full border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary mb-10 bg-primary/5 shadow-sm">
               <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
@@ -46,9 +47,11 @@ export default function Home() {
               We scan government data and automatically contact hundreds of daycares for you. You just get the replies.
             </p>
             <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto">
-              <Button size="lg" className="text-lg h-16 w-full sm:w-auto px-10 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                Start Auto-Search
-                <Search className="ml-2 h-5 w-5" />
+              <Button size="lg" className="text-lg h-16 w-full sm:w-auto px-10 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all" asChild>
+                <Link href="/dashboard">
+                  Start Auto-Search
+                  <Search className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
               <Button size="lg" variant="outline" className="text-lg h-16 w-full sm:w-auto px-10 rounded-full bg-background/50 hover:bg-muted/50 border-border/60 transition-colors">
                 How it works
@@ -65,7 +68,7 @@ export default function Home() {
         </section>
 
         {/* Value Props Section */}
-        <section className="py-24 bg-gradient-to-b from-transparent to-card/50 border-t border-border/30 relative">
+        <section className="py-10 md:py-12 bg-gradient-to-b from-transparent to-card/50 border-t border-border/30 relative">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="grid md:grid-cols-3 gap-12 lg:gap-16">
 
