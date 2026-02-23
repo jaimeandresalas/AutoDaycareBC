@@ -1,14 +1,27 @@
 "use server";
 
+import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { revalidatePath } from "next/cache";
 
+// ── Zod validation schema ───────────────────────────────────
+const requestVerifiedSpotSchema = z.object({
+    providerId: z.string().min(1, "Provider ID is required"),
+});
+
 export async function requestVerifiedSpot(providerId: string) {
+    // Validate inputs before touching the database
+    const parsed = requestVerifiedSpotSchema.safeParse({ providerId });
+    if (!parsed.success) {
+        const firstError = parsed.error.issues[0]?.message || "Invalid input.";
+        return { success: false, error: firstError };
+    }
+
     const { userId } = await auth();
 
     if (!userId) {
-        throw new Error("Unauthorized — you must be signed in to request a spot.");
+        return { success: false, error: "Unauthorized — you must be signed in to request a spot." };
     }
 
     // 1. Fetch the parent's profile for personalized request

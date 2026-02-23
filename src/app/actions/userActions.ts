@@ -1,14 +1,18 @@
 "use server";
 
+import { z } from "zod";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-interface ParentProfileData {
-    childName: string;
-    childDob: string;
-    expectedStartDate: string;
-    careTypeNeeded: "full-time" | "part-time" | "both";
-}
+// ── Zod validation schema ───────────────────────────────────
+const parentProfileSchema = z.object({
+    childName: z.string().min(1, "Child name is required"),
+    childDob: z.string().date("Child date of birth must be a valid ISO date (YYYY-MM-DD)"),
+    expectedStartDate: z.string().date("Expected start date must be a valid ISO date (YYYY-MM-DD)"),
+    careTypeNeeded: z.enum(["full-time", "part-time", "both"]),
+});
+
+export type ParentProfileData = z.infer<typeof parentProfileSchema>;
 
 export interface ParentProfile {
     id: string;
@@ -19,6 +23,13 @@ export interface ParentProfile {
 }
 
 export async function saveParentProfile(data: ParentProfileData) {
+    // Validate inputs before touching the database
+    const parsed = parentProfileSchema.safeParse(data);
+    if (!parsed.success) {
+        const firstError = parsed.error.issues[0]?.message || "Invalid input.";
+        return { success: false, error: firstError };
+    }
+
     const { userId } = await auth();
 
     if (!userId) {

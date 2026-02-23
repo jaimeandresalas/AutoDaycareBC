@@ -1,8 +1,15 @@
 "use server";
 
+import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Daycare } from "@/lib/data";
+
+// ── Zod validation schema ───────────────────────────────────
+const createCampaignSchema = z.object({
+    providerIds: z.array(z.string().min(1)).min(1, "At least one provider is required"),
+    isFollowUp: z.boolean(),
+});
 
 export interface OutreachLog {
     provider_id: string;
@@ -17,7 +24,7 @@ export async function getProviders(): Promise<Daycare[]> {
     // 1. Fetch all providers
     const { data: providers, error } = await supabaseAdmin
         .from("providers")
-        .select("*")
+        .select("id, name, phone, email, city, lat, lng, is_verified, total_capacity, price_month, next_opening, contact_method")
         .order("name", { ascending: true });
 
     if (error) {
@@ -102,6 +109,13 @@ export async function createCampaignWithLogs(
     providerIds: string[],
     isFollowUp: boolean
 ) {
+    // Validate inputs before touching the database
+    const parsed = createCampaignSchema.safeParse({ providerIds, isFollowUp });
+    if (!parsed.success) {
+        const firstError = parsed.error.issues[0]?.message || "Invalid input.";
+        return { success: false, error: firstError };
+    }
+
     const { userId } = await auth();
 
     if (!userId) {
