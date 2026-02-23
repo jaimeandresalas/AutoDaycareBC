@@ -99,12 +99,17 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to explore
 - `src/store/` - Zustand global state stores.
 - `supabase/` - SQL migration and mock seed scripts.
 
-## 🧪 Testing Credentials (For Judges)
-To speed up your evaluation without needing to sign up, you can use the following test account:
-- **Email/User:** `test_user`
+## 🧪 Judge Testing Credentials
+To evaluate the core functionality, please use the following standard email credentials:
+
+- **Email:** `test@gmail.com`
 - **Password:** `test_user_2026`
 
+> **Note:** This test account has already completed the onboarding flow (`publicMetadata.onboarded = true`), so logging in will route you directly to the main dashboard.
+
 *(You are also welcome to create your own account from scratch to experience the full onboarding flow!)*
+
+🌐 **Live Environment:** The live deployment at [Vercel](https://auto-daycare-bc.vercel.app/) is connected to a fully seeded production database. The provider map, filters, and analytics dashboard are populated and ready for your end-to-end testing.
 
 ---
 

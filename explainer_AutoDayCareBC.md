@@ -67,12 +67,17 @@ AutoDayCare BC bridges the gap between modern parents and legacy daycare operati
 
 ## 🧪 Testing Guide for Judges
 
-### Test Credentials
-To test the full authenticated flow without creating an account, use the following verified Clerk credentials:
-- **Email/User:** `test_user`
+### 🧪 Judge Testing Credentials
+To evaluate the core functionality, please use the following standard email credentials:
+
+- **Email:** `test@gmail.com`
 - **Password:** `test_user_2026`
 
+> **Note:** This test account has already completed the onboarding flow (`publicMetadata.onboarded = true`), so logging in will route you directly to the main dashboard.
+
 *(You are also welcome to create your own account to experience the complete onboarding flow.)*
+
+🌐 **Live Environment:** The live deployment at [Vercel](https://auto-daycare-bc.vercel.app/) is connected to a fully seeded production database. The provider map, filters, and analytics dashboard are populated and ready for your end-to-end testing.
 
 ### Database Seed
 Ensure you run the `supabase/seed.sql` script in the Supabase SQL Editor to generate the 20 mock providers and create the necessary `provider_leads` table before testing the Provider portal at `/providers`.
