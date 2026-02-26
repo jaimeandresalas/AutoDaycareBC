@@ -75,10 +75,6 @@ export default function DaycareMap({ daycares }: DaycareMapProps) {
                         <div className="w-3 h-3 rounded-full bg-blue-500" />
                         <span className="text-muted-foreground">Unverified</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs">
-                        <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                        <span className="text-muted-foreground">Selected</span>
-                    </div>
                 </div>
             </div>
 

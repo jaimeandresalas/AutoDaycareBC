@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Search, MapPin, DollarSign, Filter, Phone, Mail, Plus, Check, CheckCircle2, Clock, RotateCcw, BarChart3, List, Map, Send, Loader2 } from "lucide-react";
+import { Search, MapPin, DollarSign, Filter, Phone, Mail, Plus, Check, CheckCircle2, Clock, RotateCcw, BarChart3, List, Map, Send, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Daycare } from "@/lib/data";
@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOutreachStore } from "@/store/useOutreachStore";
 import FloatingOutreachBar from "@/components/FloatingOutreachBar";
+import AIAssistant from "@/components/AIAssistant";
 import { getUserOutreachLogs, getProviders, OutreachLog } from "@/app/actions/daycareActions";
 import { requestVerifiedSpot } from "@/app/actions/spotActions";
 
@@ -41,6 +42,7 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [requestedSpots, setRequestedSpots] = useState<Set<string>>(new Set());
     const [requestingId, setRequestingId] = useState<string | null>(null);
+    const [aiRecommendations, setAiRecommendations] = useState<{ id: string, reason: string }[]>([]);
 
     // Fetch providers from Supabase + outreach history
     useEffect(() => {
@@ -118,6 +120,16 @@ export default function DashboardPage() {
             return true;
         });
     }, [selectedCity, showVerifiedOnly, allDaycares]);
+
+    const displayedDaycares = useMemo(() => {
+        if (aiRecommendations.length > 0) {
+            return aiRecommendations.map(rec => {
+                const daycare = filteredDaycares.find(d => d.id === rec.id);
+                return daycare ? { ...daycare, aiReason: rec.reason } : null;
+            }).filter(Boolean) as (Daycare & { aiReason?: string })[];
+        }
+        return filteredDaycares as (Daycare & { aiReason?: string })[];
+    }, [filteredDaycares, aiRecommendations]);
 
     const SidebarContent = () => (
         <div className="space-y-8">
@@ -211,7 +223,7 @@ export default function DashboardPage() {
 
                     <div className="flex items-center gap-4">
                         <span className="text-sm font-medium text-muted-foreground mr-2 hidden md:inline-block">
-                            Found {filteredDaycares.length} results
+                            Found {displayedDaycares.length} results
                         </span>
                         <Link href="/analytics">
                             <Button variant="ghost" size="icon" className="relative group">
@@ -230,7 +242,7 @@ export default function DashboardPage() {
 
                 {/* Mobile Filter Toggle */}
                 <div className="md:hidden flex items-center justify-between bg-card p-4 rounded-xl border shadow-sm">
-                    <span className="font-semibold">Filters ({filteredDaycares.length} results)</span>
+                    <span className="font-semibold">Filters ({displayedDaycares.length} results)</span>
                     {/* Placeholder for actual mobile sheet, if sheet was installed. Since it might not be, well implement standard div toggle later if needed. For now, it requires screen size. */}
                     <Button variant="outline" size="sm" className="flex items-center gap-2">
                         <Filter className="h-4 w-4" />
@@ -246,7 +258,13 @@ export default function DashboardPage() {
                 </aside>
 
                 {/* Main Content (Grid) */}
-                <main className="flex-1">
+                <main className="flex-1 min-w-0">
+                    <AIAssistant
+                        daycares={filteredDaycares}
+                        onRecommendations={setAiRecommendations}
+                        isFiltering={aiRecommendations.length > 0}
+                    />
+
                     <div className="flex justify-between items-center mb-6 hidden md:flex">
                         <h2 className="text-2xl font-bold tracking-tight">Daycare Directory</h2>
 
@@ -280,7 +298,7 @@ export default function DashboardPage() {
                             <div className="h-10 w-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
                             <p className="text-muted-foreground font-medium">Loading daycares...</p>
                         </div>
-                    ) : filteredDaycares.length === 0 ? (
+                    ) : displayedDaycares.length === 0 ? (
                         <div className="flex flex-col items-center justify-center p-16 text-center bg-card rounded-2xl border border-dashed">
                             <Search className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
                             <h3 className="text-xl font-semibold mb-2">No daycares found</h3>
@@ -299,11 +317,11 @@ export default function DashboardPage() {
                             </Button>
                         </div>
                     ) : viewMode === "map" ? (
-                        <DaycareMap daycares={filteredDaycares} />
+                        <DaycareMap daycares={displayedDaycares} />
                     ) : (
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                            {filteredDaycares.map((daycare) => (
-                                <Card key={daycare.id} className="overflow-hidden group hover:shadow-md transition-all duration-300 border-border/60 flex flex-col h-full bg-card/60 hover:bg-card">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full">
+                            {displayedDaycares.map((daycare) => (
+                                <Card key={daycare.id} className="overflow-hidden group hover:shadow-md transition-all duration-300 border-border/60 flex flex-col h-full bg-card/60 hover:bg-card relative">
                                     <CardHeader className="pb-4">
                                         <div className="flex justify-between items-start gap-3 mb-2">
                                             <div className="space-y-1 min-w-0">
@@ -337,6 +355,14 @@ export default function DashboardPage() {
                                     </CardHeader>
 
                                     <CardContent className="pb-6 flex-1 space-y-4">
+                                        {/* AI Reason (if present) */}
+                                        {daycare.aiReason && (
+                                            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm flex gap-2.5 items-start shadow-sm mx-1">
+                                                <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                                <p className="text-primary/95 font-medium leading-[1.4]">{daycare.aiReason}</p>
+                                            </div>
+                                        )}
+
                                         {/* Contact Info */}
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
