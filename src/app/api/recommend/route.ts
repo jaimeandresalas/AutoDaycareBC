@@ -27,6 +27,7 @@ export async function POST(req: Request) {
     ${JSON.stringify(properties)}
 
     Analyze the user's request and select the options that best fit their search. You don't have to return all of them, just the top 2 to 4 best matches.
+    When evaluating options, take into consideration their "googleMapReview" score and "userRatingsTotal" (if available). Highly-rated daycares with more user ratings should generally be favored if all else is equal, and it is a great supporting point when explaining the reason for recommendation.
     You must return a JSON strictly with this structure and nothing else:
     {
       "recommendations": [

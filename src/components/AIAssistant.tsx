@@ -36,6 +36,8 @@ export default function AIAssistant({ daycares, onRecommendations, isFiltering }
                 city: d.location.city,
                 capacity: d.capacity,
                 isVerified: d.isVerified,
+                googleMapReview: d.googleMapReview,
+                userRatingsTotal: d.userRatingsTotal,
             }));
 
             const res = await fetch("/api/recommend", {

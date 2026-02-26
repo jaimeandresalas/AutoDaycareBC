@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 
 import { Daycare } from "@/lib/data";
 import { useOutreachStore } from "@/store/useOutreachStore";
-import { MapPin, Plus, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { MapPin, Plus, X, CheckCircle2, AlertCircle, Star } from "lucide-react";
 
 // ── Fix Leaflet default marker icons in Next.js ─────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,6 +125,13 @@ export default function DaycareMap({ daycares }: DaycareMapProps) {
                                             <MapPin className="h-3 w-3" />
                                             {daycare.location.city}
                                         </p>
+                                        {daycare.googleMapReview != null && daycare.userRatingsTotal != null && (
+                                            <div className="flex items-center gap-1 font-medium text-foreground">
+                                                <span>{daycare.googleMapReview.toFixed(1)}</span>
+                                                <Star className="h-3 w-3 fill-amber-400 text-amber-400 -mt-0.5" />
+                                                <span className="text-muted-foreground font-normal">({daycare.userRatingsTotal})</span>
+                                            </div>
+                                        )}
                                         <p>
                                             <span className="font-semibold text-foreground">${daycare.priceMonth}</span>/mo
                                             {daycare.isVerified && (

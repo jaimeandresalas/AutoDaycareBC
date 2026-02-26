@@ -24,7 +24,7 @@ export async function getProviders(): Promise<Daycare[]> {
     // 1. Fetch all providers
     const { data: providers, error } = await supabaseAdmin
         .from("providers")
-        .select("id, name, phone, email, city, lat, lng, is_verified, total_capacity, price_month, next_opening, contact_method")
+        .select("id, name, phone, email, city, lat, lng, is_verified, total_capacity, price_month, next_opening, contact_method, google_map_review, user_ratings_total")
         .order("name", { ascending: true });
 
     if (error) {
@@ -74,6 +74,8 @@ export async function getProviders(): Promise<Daycare[]> {
         priceMonth: p.price_month || 0,
         hasRequestedSpot: spotRequests.has(p.id),
         requestedAt: spotRequests.get(p.id) || null,
+        googleMapReview: p.google_map_review !== null ? parseFloat(p.google_map_review) : null,
+        userRatingsTotal: p.user_ratings_total !== null ? parseInt(p.user_ratings_total) : null,
     }));
 }
 

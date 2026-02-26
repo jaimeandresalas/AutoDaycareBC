@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Search, MapPin, DollarSign, Filter, Phone, Mail, Plus, Check, CheckCircle2, Clock, RotateCcw, BarChart3, List, Map, Send, Loader2, Sparkles } from "lucide-react";
+import { Search, MapPin, DollarSign, Filter, Phone, Mail, Plus, Check, CheckCircle2, Clock, RotateCcw, BarChart3, List, Map, Send, Loader2, Sparkles, Star, Bot } from "lucide-react";
 import { toast } from "sonner";
 
 import { Daycare } from "@/lib/data";
@@ -43,6 +43,10 @@ export default function DashboardPage() {
     const [requestedSpots, setRequestedSpots] = useState<Set<string>>(new Set());
     const [requestingId, setRequestingId] = useState<string | null>(null);
     const [aiRecommendations, setAiRecommendations] = useState<{ id: string, reason: string }[]>([]);
+
+    // Analysis State
+    const [analyzingDaycareId, setAnalyzingDaycareId] = useState<string | null>(null);
+    const [daycareAnalyses, setDaycareAnalyses] = useState<Record<string, string>>({});
 
     // Fetch providers from Supabase + outreach history
     useEffect(() => {
@@ -102,6 +106,44 @@ export default function DashboardPage() {
         );
     };
 
+    // Handle Individual Daycare Analysis
+    const handleAnalyzeDaycare = async (daycare: Daycare) => {
+        if (daycareAnalyses[daycare.id]) return;
+
+        setAnalyzingDaycareId(daycare.id);
+        try {
+            const payload = {
+                name: daycare.name,
+                city: daycare.location.city,
+                capacity: daycare.capacity,
+                priceMonth: daycare.priceMonth,
+                isVerified: daycare.isVerified,
+                googleMapReview: daycare.googleMapReview,
+                userRatingsTotal: daycare.userRatingsTotal,
+            };
+
+            const res = await fetch("/api/analyze-daycare", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ daycare: payload }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to analyze daycare");
+            }
+
+            setDaycareAnalyses(prev => ({ ...prev, [daycare.id]: data.analysis }));
+        } catch (error: unknown) {
+            console.error("Error analyzing daycare:", error);
+            const err = error as Error;
+            toast.error("Analysis Failed", { description: err.message || "An unexpected error occurred." });
+        } finally {
+            setAnalyzingDaycareId(null);
+        }
+    };
+
     const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
     // Client-side filtering logic
@@ -131,6 +173,11 @@ export default function DashboardPage() {
         return filteredDaycares as (Daycare & { aiReason?: string })[];
     }, [filteredDaycares, aiRecommendations]);
 
+    const uniqueCities = useMemo(() => {
+        const cities = new Set(allDaycares.map(d => d.location.city));
+        return Array.from(cities).sort();
+    }, [allDaycares]);
+
     const SidebarContent = () => (
         <div className="space-y-8">
             <div>
@@ -146,10 +193,11 @@ export default function DashboardPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Cities</SelectItem>
-                        <SelectItem value="coquitlam">Coquitlam</SelectItem>
-                        <SelectItem value="burnaby">Burnaby</SelectItem>
-                        <SelectItem value="vancouver">Vancouver</SelectItem>
-                        <SelectItem value="port moody">Port Moody</SelectItem>
+                        {uniqueCities.map(city => (
+                            <SelectItem key={city} value={city.toLowerCase()}>
+                                {city}
+                            </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>
@@ -328,9 +376,18 @@ export default function DashboardPage() {
                                                 <CardTitle className="text-xl group-hover:text-primary transition-colors leading-tight line-clamp-1">
                                                     {daycare.name}
                                                 </CardTitle>
-                                                <CardDescription className="flex items-center gap-1.5 text-sm font-medium">
-                                                    <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                                    {daycare.location.city}, BC
+                                                <CardDescription className="flex flex-col gap-1 text-sm font-medium">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                                        {daycare.location.city}, BC
+                                                    </div>
+                                                    {daycare.googleMapReview != null && daycare.userRatingsTotal != null && (
+                                                        <div className="flex items-center gap-1 mt-0.5">
+                                                            <span className="font-semibold text-foreground">{daycare.googleMapReview.toFixed(1)}</span>
+                                                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 -mt-0.5" />
+                                                            <span className="text-muted-foreground ml-0.5">({daycare.userRatingsTotal} reviews)</span>
+                                                        </div>
+                                                    )}
                                                 </CardDescription>
                                             </div>
 
@@ -395,6 +452,30 @@ export default function DashboardPage() {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* Analyze Button or Result */}
+                                        {!daycareAnalyses[daycare.id] ? (
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => handleAnalyzeDaycare(daycare)}
+                                                disabled={analyzingDaycareId === daycare.id}
+                                                className="w-full bg-primary/5 hover:bg-primary/10 text-primary border border-primary/10 shadow-none font-semibold mt-2"
+                                            >
+                                                {analyzingDaycareId === daycare.id ? (
+                                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Analyzing...</>
+                                                ) : (
+                                                    <><Bot className="h-4 w-4 mr-2" /> AI Analysis</>
+                                                )}
+                                            </Button>
+                                        ) : (
+                                            <div className="mt-2 bg-primary/5 p-3 rounded-lg border border-primary/10 text-sm leading-relaxed whitespace-pre-line text-foreground/90">
+                                                <div className="flex items-center gap-1.5 font-semibold text-primary mb-1">
+                                                    <Bot className="h-4 w-4" /> AI Analysis
+                                                </div>
+                                                {daycareAnalyses[daycare.id]}
+                                            </div>
+                                        )}
                                     </CardContent>
 
                                     <CardFooter className="pt-0 pb-6 border-t border-border/40 mt-auto bg-card/40 flex">
@@ -529,6 +610,7 @@ export default function DashboardPage() {
                     )}
                 </main>
             </div>
+
             <FloatingOutreachBar />
         </div>
     );

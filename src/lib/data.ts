@@ -19,4 +19,6 @@ export interface Daycare {
     priceMonth: number;
     hasRequestedSpot?: boolean;
     requestedAt?: string | null;
+    googleMapReview?: number | null;
+    userRatingsTotal?: number | null;
 }
