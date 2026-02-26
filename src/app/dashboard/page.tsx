@@ -360,12 +360,14 @@ export default function DashboardPage() {
                                                     {daycare.priceMonth}/<span className="text-sm font-medium text-muted-foreground ml-1">mo</span>
                                                 </span>
                                             </div>
-                                            <div className="flex flex-col gap-1.5 bg-background border border-border/50 rounded-lg p-3 flex-1 flex-shrink-0">
-                                                <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Capacity</span>
-                                                <span className="text-lg font-bold">
-                                                    {daycare.capacity} <span className="text-sm font-medium text-muted-foreground">kids</span>
-                                                </span>
-                                            </div>
+                                            {daycare.isVerified && (
+                                                <div className="flex flex-col gap-1.5 bg-background border border-border/50 rounded-lg p-3 flex-1 flex-shrink-0">
+                                                    <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Capacity</span>
+                                                    <span className="text-lg font-bold">
+                                                        {daycare.capacity} <span className="text-sm font-medium text-muted-foreground">kids</span>
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     </CardContent>
 

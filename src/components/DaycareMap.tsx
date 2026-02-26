@@ -131,8 +131,12 @@ export default function DaycareMap({ daycares }: DaycareMapProps) {
                                         </p>
                                         <p>
                                             <span className="font-semibold text-foreground">${daycare.priceMonth}</span>/mo
-                                            &nbsp;·&nbsp;
-                                            Capacity: {daycare.capacity}
+                                            {daycare.isVerified && (
+                                                <>
+                                                    &nbsp;·&nbsp;
+                                                    Capacity: {daycare.capacity}
+                                                </>
+                                            )}
                                         </p>
                                     </div>
 
